@@ -27,6 +27,20 @@ Claude offers to remove that exact entry with consent and a private backup, avoi
 The connection comes from the plugin; you do not need the Analyser's Set up AI for Claude Code. In Analyser
 1.40.3 that route can offer a user-scope entry again. If you add one, rerun plugin setup to review its removal.
 
+## Update the plugin and app
+
+```sh
+claude plugin marketplace update telamin
+claude plugin update fluxtion-analyser@telamin
+```
+
+Then `/reload-plugins --force` or start a new session. Plugin 0.1.1 keeps a verified Analyser 1.40.2 connection
+working and offers a one-time upgrade notice. Say “set up the Fluxtion Analyser” when you want 1.40.3.
+Approve the UPGRADE replacement, close the old app when asked, and rerun the plan. Setup downloads and verifies
+the new JAR before replacing the launcher, keeps a private backup, and preserves your settings and sign-in.
+Reconnect afterwards and ask Claude to confirm with its native `analyser_context` call.
+Until 0.1.1 is published, plugin 0.1.0 requires the [manual preview upgrade](skills/setup/REFERENCE.md#manual-upgrade-including-while-using-plugin-010).
+
 ## Connect and use it
 
 In the tested interactive terminal, run this when asked:
@@ -39,7 +53,9 @@ Claude must call its own `analyser_context` tool and receive `ok: true` before r
 Installation or registration alone is not confirmation. Same-session reconnect worked in the macOS
 Claude Code 2.1.316 trial; `/reload-plugins` alone left the failed server disconnected.
 
-On a later day, the plugin server may fail because the Analyser is closed. Say “set up the Fluxtion Analyser”
+On a later day, the plugin server may fail because the Analyser is closed. If you kept 1.40.2, open
+`JBANG_DIR/bin/analyser` (normally `~/.jbang/bin/analyser`) to stay on it, then reconnect. Setup proposes
+an upgrade for 1.40.2. For the current 1.40.3, say “set up the Fluxtion Analyser”
 again and review the plan: it normally opens the existing app and may refresh the saved Java path for the
 bridge. Then reconnect and ask for the native check. Automatic MCP launch does not open the app or grant
 external access. A sign-in-only rerun keeps an already confirmed connection.

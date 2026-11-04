@@ -13,6 +13,15 @@ After a marketplace install, if Claude Code asks, run `/reload-plugins --force` 
 
 Copy prompt: **Set up the Fluxtion Analyser and connect it to this assistant.**
 
+## Update notices
+
+Updating the plugin does not automatically upgrade the app. The bridge can continue using the exact verified
+1.40.2 release. If its native context response has `pluginBridge.upgradeNotice`, relay it once in this conversation: say “set up
+the Fluxtion Analyser” to upgrade. Do not run setup or upgrade just because the notice appears. The bridge
+remembers this notice per home/release pair and also writes it to stderr for diagnostics.
+A future release marked upgrade-required must be upgraded before connecting. Only a native context call
+proves the current conversation is connected. After an approved upgrade, manual MCP reconnect is still required.
+
 ## 1. Explain and ask once
 
 Before downloads or commands that change state, resolve the home, JBang/cache and Claude config destinations
@@ -110,6 +119,13 @@ If its selected actions and destinations are entirely within the upfront approva
 if there is no SIGN_IN action, use `plan-id` because there is no new sign-in to exclude.
 An existing valid sign-in is retained. Never silently change the answer.
 
+When the plan proposes UPGRADE, name only that case in the consent question: “Upgrade your verified
+Analyser 1.40.2 to 1.40.3, keeping your settings and sign-in? I will download and verify the new JAR before
+replacing the launcher, keep a private backup and the old cache/trust for undo, then open the app.”
+This is a replacement requiring specific approval; a previous install-only answer does not approve it.
+If the old app is open, ask the person to close it and replan. Never stop their app yourself. A failed download
+leaves the old launcher usable. Do not suggest cache recovery for a version upgrade.
+
 A replacement, different destination or BLOCKED result needs attention before proceeding: explain the extra
 change and ask for specific approval where applicable. A selected BLOCKED plan cannot be applied; the sole
 CI sign-in blocker can be removed by selecting its without-sign-in plan (see Operator notes). The helper detects
@@ -163,7 +179,9 @@ receipt cannot inspect that session. Its `nativeConfirmation` is “not assessed
 that a previous native confirmation was lost. Reconnect when this apply started the app or prepared its
 bridge (`pluginReconnectRecommended`), or when native tools are unavailable.
 
-**Day two: Analyser closed.** A failed plugin server can mean the Analyser is simply closed. Say
+**Day two: Analyser closed.** If you kept compatible 1.40.2, reopen the existing launcher at
+`JBANG_DIR/bin/analyser` (normally `~/.jbang/bin/analyser`) to stay on that version; setup instead proposes
+an upgrade. Reconnect and confirm with native `analyser_context`. For the current 1.40.3, say
 “set up the Fluxtion Analyser” again: inspect the plan, which normally opens the existing app (START_APP)
 and refreshes its installed Java path (PREPARE_PLUGIN). Keep the existing install, access and plugin declaration;
 ask for any extra changes under the consent rules above. After opening it, reconnect the plugin and call

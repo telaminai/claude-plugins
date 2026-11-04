@@ -92,8 +92,8 @@ iex "& { $(iwr -useb https://ps.jbang.dev) } app install --java 21 --name analys
 ```
 
 The Bash block downloads completely before executing and preserves a failed fetch status.
-If a bootstrap command fails, stop and inspect the stage; do not continue to registration. Do not use `--force`
-to replace an existing app with this setup route. Upgrading an existing version is a separate, explicit choice.
+If a bootstrap command fails, stop and inspect the stage; do not continue to registration. Do not force-replace
+an arbitrary existing app. For the exact preview 1.40.2 install, use the consented upgrade below.
 
 ### Verify the downloaded JAR before opening the application
 
@@ -232,12 +232,76 @@ person, and the actual context-call result. Keep credentials and private project
 Only after connection succeeds ask for the project or task to work on. The assistant runs builds with its own
 tools; the Analyser reads the results and evidence.
 
+## Upgrade a preview installation
+
+Plugin 0.1.1 is the candidate for this upgrade flow. Updating the plugin and updating the Analyser are separate
+operations. The candidate bridge accepts the exact, hash-verified 1.40.2 and 1.40.3 releases; it never downloads
+or upgrades them. A one-time native context notice (also written to stderr) offers the optional 1.40.3 upgrade. Unknown, modified or future
+launchers are refused. A per-release minimum marker can require a newer app when tools need it.
+
+Say “set up the Fluxtion Analyser”, or run `/fluxtion-analyser:setup`. When UPGRADE is proposed, approve that
+replacement explicitly. Close the old app when asked, then replan. The helper verifies the old launcher and JAR,
+trusts only the new release folder, downloads and verifies the new JAR **before** replacing the launcher with
+`jbang app install --force --java 21 --name analyser`. A failed download leaves the old launcher unchanged.
+It keeps the saved AI client, existing external-access setting, compiler sign-in, old cache and old trust rule.
+It reuses the plugin Java path when unchanged, otherwise records its refresh separately. Receipts include the
+old launcher, its mode/fingerprint and selective undo. After setup, reconnect and require a native context call:
+
+```text
+/mcp reconnect plugin:fluxtion-analyser:fluxtion-analyser
+```
+
+### Manual upgrade, including while using plugin 0.1.0
+
+Use this only after the person explicitly approves replacing their **exact 1.40.2** launcher and closes that
+home's Analyser. Do not run another setup concurrently. Resolve the absolute JBang executable first and keep
+the same HOME, JBANG_DIR and JBANG_CACHE_DIR. JBang can edit shell startup files: preserve copies of any
+existing `.bashrc`, `.bash_profile`, `.zshrc`, `.zprofile`, `.profile` and `.config/fish/conf.d/jbang.fish`
+before starting, and undo only installer-added lines if needed. The automatic route records these copies.
+Do not use this recipe for an unknown or customised launcher.
+
+```sh
+(
+  set -eu
+  : "${analyser_jbang_executable:?Resolve the absolute JBang executable first}"
+  analyser_upgrade_dir="${JBANG_DIR:-$HOME/.jbang}"
+  analyser_upgrade_cache="${JBANG_CACHE_DIR:-$analyser_upgrade_dir/cache}"
+  export JBANG_DIR="$analyser_upgrade_dir" JBANG_CACHE_DIR="$analyser_upgrade_cache"
+  analyser_old_url=https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.40.2/fluxtion-auditlog-analyser.jar
+  analyser_new_url=https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.40.3/fluxtion-auditlog-analyser.jar
+  analyser_launcher="$analyser_upgrade_dir/bin/analyser"
+  [ ! -L "$analyser_launcher" ] && [ -x "$analyser_launcher" ]
+  printf '#!/bin/sh\nexec jbang run --java 21 %s "$@"\n' "$analyser_old_url" | cmp -s - "$analyser_launcher"
+  analyser_old_key="$(printf '%s' "$analyser_old_url" | shasum -a 256 | cut -d ' ' -f 1)"
+  analyser_new_key="$(printf '%s' "$analyser_new_url" | shasum -a 256 | cut -d ' ' -f 1)"
+  analyser_old_jar="$analyser_upgrade_cache/urls/$analyser_old_key/fluxtion-auditlog-analyser.jar"
+  analyser_new_jar="$analyser_upgrade_cache/urls/$analyser_new_key/fluxtion-auditlog-analyser.jar"
+  printf '%s  %s\n' 25c51f9bd5940c84a7820062d4ba56d6a961b071b968ec48f51006c7c3591265 "$analyser_old_jar" | shasum -a 256 -c -
+  analyser_upgrade_backup="$(mktemp -d "$analyser_upgrade_dir/analyser-upgrade-1.40.2.XXXXXX")"
+  cp -p "$analyser_launcher" "$analyser_upgrade_backup/analyser"
+  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" trust add https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.40.3/
+  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" info jar --fresh "$analyser_new_url"
+  printf '%s  %s\n' 1cb19a64e9866031e5502908f26f78bc886a9d2e1a46fd281929425792eabc7c "$analyser_new_jar" | shasum -a 256 -c -
+  cmp -s "$analyser_upgrade_backup/analyser" "$analyser_launcher"
+  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" app install --force --java 21 --name analyser "$analyser_new_url"
+  printf '#!/bin/sh\nexec jbang run --java 21 %s "$@"\n' "$analyser_new_url" | cmp -s - "$analyser_launcher"
+  printf '%s  %s\n' 1cb19a64e9866031e5502908f26f78bc886a9d2e1a46fd281929425792eabc7c "$analyser_new_jar" | shasum -a 256 -c -
+  printf 'Previous launcher kept at %s/analyser\n' "$analyser_upgrade_backup"
+)
+```
+
+Then rerun setup to open the verified new app, refresh its bridge Java path if needed, and reconnect as above.
+Keep the old JAR and trust rule. To undo, close the new app, check that nobody has edited the new launcher,
+and restore the saved launcher with its original mode. Use a plugin that allows the restored version (0.1.1 also accepts 1.40.2);
+do not overwrite later changes or delete settings, logs or credentials. A failed installer may leave partial
+state: inspect it and keep the backup rather than repeating `--force` blindly.
+
 ## Recovery and limits
 
 - `Connection closed` alone does not show that the Analyser is closed. For this JBang launcher, check the
   server's PATH and whether it can resolve `jbang` first; a missing executable caused the observed GUI-style
   failure. Also check the launcher/release and the app's access status. Do not diagnose from that symptom alone.
-- A checksum mismatch means stop before launching. A corrupt cached JAR can produce “No main class” and will
+- Same-version cache recovery (not an upgrade): a checksum mismatch means stop before launching. A corrupt cached JAR can produce “No main class” and will
   not necessarily be downloaded again on a normal launch. Preserve the failed file for diagnosis; do not clear
   the whole JBang cache or reinstall with `--force`. After explaining the targeted refresh, use the verified
   absolute JBang executable with the same JBANG_DIR/JBANG_CACHE_DIR to refresh only the pinned release URL:
@@ -310,10 +374,10 @@ Interactive sign-in is blocked in CI. If that is the only blocker, the explicitl
 still apply other actions. Existing matching credentials are kept. Otherwise BLOCKED stops the route.
 
 Never print endpoint credentials, private registration backups or startup logs. Never modify the pinned helper,
-bypass its digest, use force-install or trust-all. Its source pin is a consistency check, not a signature.
+bypass its digest or use trust-all. Force-install is limited to the approved, verified previous-release upgrade above. Its source pin is a consistency check, not a signature.
 
 
-## Claude Code plugin preview
+## Claude Code plugin
 
 The plugin bundles the same helper at build time; the URL route above and all
 manual procedures remain available. The macOS plugin route is selected explicitly by `--route claude-code-plugin`.
@@ -353,7 +417,7 @@ Install commands:
 
 After a marketplace install, if Claude Code asks, run `/reload-plugins --force` or start a new session before setup.
 
-The manual install above remains available. Marketplace installation and managed rollout have not been tested.
+The manual install above remains available. Public marketplace installation was tested for 0.1.0; managed rollout remains untested.
 
 Official references rechecked 2026-11-03:
 [manifest and bin layout](https://code.claude.com/docs/en/plugins-reference),
@@ -365,3 +429,12 @@ On macOS Claude Code 2.1.316, `/reload-plugins` alone left the server failed;
 If a removed user-scope server remains loaded, disable it in `/mcp`. A nonterminal reload does not
 connect newly declared plugin servers; use the new-session handover there. Do not equate a local plugin
 manifest, or the helper's diagnostic bridge, with a native connection in the current assistant session.
+
+### Reopen the compatible preview without upgrading
+
+If you kept Analyser 1.40.2, setup proposes an upgrade to 1.40.3; it does not offer a reopen-only plan.
+To stay on 1.40.2, open the existing launcher at the resolved `JBANG_DIR/bin/analyser` path
+(default `~/.jbang/bin/analyser`), then run
+`/mcp reconnect plugin:fluxtion-analyser:fluxtion-analyser` and confirm with the native
+`analyser_context` tool. Declining an upgrade does not require accepting it on the next day.
+The bridge never opens the app or downloads an upgrade itself.

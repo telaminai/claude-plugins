@@ -6,10 +6,6 @@ if [ ! -f "$HOME/.fluxtion-analyser/setup-plugin-java" ]; then
   echo "Analyser is not ready; run /fluxtion-analyser:setup." >&2
   exit 2
 fi
-if [ ! -f "$HOME/.fluxtion-analyser/rest-endpoint" ]; then
-  echo "Open the Analyser with /fluxtion-analyser:setup, then /mcp reconnect plugin:fluxtion-analyser:fluxtion-analyser and confirm with native analyser_context. No downloads attempted." >&2
-  exit 2
-fi
 IFS= read -r analyser_java < "$HOME/.fluxtion-analyser/setup-plugin-java"
 case "$analyser_java" in /*/bin/java) ;; *) echo "Invalid installed Java path; run /fluxtion-analyser:setup." >&2; exit 2 ;; esac
 [ -x "$analyser_java" ] || { echo "Installed Java is missing; run /fluxtion-analyser:setup." >&2; exit 2; }

@@ -28,6 +28,21 @@ public class AnalyserSetup {
     static final String JAR_URL = RELEASE_DIR + "fluxtion-auditlog-analyser.jar";
     static final String JAR_SHA256 =
             "1cb19a64e9866031e5502908f26f78bc886a9d2e1a46fd281929425792eabc7c";
+    record PinnedRelease(String version, String url, String sha256, String minimumRequired) {
+        Path jar(Machine m) {
+            return m.cacheDir.resolve("urls").resolve(hash(url))
+                    .resolve("fluxtion-auditlog-analyser.jar");
+        }
+    }
+
+    // Only these exact released launcher bytes and cached artifacts may be replaced by consent.
+    static final List<PinnedRelease> UPGRADE_FROM = List.of(new PinnedRelease(
+            "1.40.2",
+            "https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.40.2/fluxtion-auditlog-analyser.jar",
+            "25c51f9bd5940c84a7820062d4ba56d6a961b071b968ec48f51006c7c3591265", "1.40.2"));
+    static final PinnedRelease TARGET_RELEASE = new PinnedRelease(VERSION, JAR_URL, JAR_SHA256, VERSION);
+    // A previous release is compatible only when its version meets its reviewed minimum marker.
+    // Raise that entry's marker to VERSION when this plugin requires newer MCP behaviour.
     static final String SERVER = "fluxtion-analyser";
     static final String SEP = File.pathSeparator;
     static final String SCHEMA = "chat-setup-6";
@@ -73,6 +88,7 @@ public class AnalyserSetup {
         static String wording(Kind kind) {
             return switch (kind) {
                 case TRUST -> "Trusting the Analyser " + VERSION + " release in JBang";
+                case UPGRADE -> "Upgrading the analyser command to " + VERSION;
                 case INSTALL -> "Installing the analyser command (downloading Java 21 if needed)";
                 case RECORD_CLIENT -> "Recording Claude Code as your Analyser AI client";
                 case START_APP -> "Opening the Analyser window";
@@ -90,6 +106,7 @@ public class AnalyserSetup {
     enum Kind {
         TRUST,
         INSTALL,
+        UPGRADE,
         RECORD_CLIENT,
         START_APP,
         PREPARE_PLUGIN,
@@ -298,6 +315,10 @@ public class AnalyserSetup {
             return verifiedJar(m);
         }
 
+        default void verifyPrevious(Machine m, PinnedRelease release) throws Exception {
+            verifyPinnedJar(release.jar(m), release.sha256);
+        }
+
         String run(Machine m, int seconds, List<String> command, Path logs) throws Exception;
 
         OwnedProcess start(Machine m, Path logs) throws Exception;
@@ -378,18 +399,37 @@ public class AnalyserSetup {
                             + " first.");
         if (trusted(m)) kept.add("Existing release trust is kept.");
         else actions.add(new Action(Kind.TRUST, "Permanently trust only " + RELEASE_DIR));
-        if (Files.exists(m.launcher)) {
-            if (!validLauncher(m))
-                blocked.add(
-                        "The existing analyser launcher is not the exact supported 1.40.3 launcher;"
-                                + " it will not be changed.");
-            else kept.add("Existing 1.40.3 launcher is kept at " + m.launcher);
-            try {
-                ops.verify(m);
-            } catch (Exception e) {
-                blocked.add(
-                        "The exact release URL's cached JAR is missing or differs. Use the targeted"
-                                + " cache recovery in REFERENCE.md, then replan.");
+        PinnedRelease previous = previousRelease(m);
+        if (Files.exists(m.launcher, LinkOption.NOFOLLOW_LINKS)) {
+            if (previous != null) {
+                try {
+                    ops.verifyPrevious(m, previous);
+                    actions.add(new Action(Kind.UPGRADE,
+                            "Upgrade: replace only the exact " + previous.version + " analyser launcher at "
+                            + m.launcher + " with " + VERSION + ". First download and checksum-verify "
+                            + JAR_URL + "; only then run JBang app install --force --java 21. "
+                            + "Keep a private before-copy and selective undo. Keep the old trust/cache, saved AI client, external-access choice, "
+                            + "plugin Java path and compiler sign-in. JBang may update shell PATH, j! and "
+                            + "JAVA_HOME; keep before-copies. Close this home's old Analyser first. "
+                            + "This replacement requires specific approval."));
+                } catch (Exception e) {
+                    blocked.add("Upgrade from " + previous.version + " cannot verify the previous pinned JAR at "
+                            + previous.jar(m) + ". Its exact SHA-256 must be " + previous.sha256
+                            + "; restore the official previous artifact before replanning. No launcher replacement was made.");
+                }
+            } else if (!validTargetLauncher(m)) {
+                blocked.add("Unrecognised or modified analyser launcher at " + m.launcher
+                        + " (SHA-256 " + fingerprint(m.launcher) + "). Expected the exact "
+                        + VERSION + " launcher for " + JAR_URL
+                        + ", or an allow-listed previous release (1.40.2) for an approved upgrade; it will not be changed.");
+            } else {
+                kept.add("Existing " + VERSION + " launcher is kept at " + m.launcher);
+                try {
+                    ops.verify(m);
+                } catch (Exception e) {
+                    blocked.add("The exact release URL's cached JAR is missing or differs. Use the targeted"
+                            + " same-version cache recovery in REFERENCE.md, then replan.");
+                }
             }
         } else
             actions.add(
@@ -402,6 +442,9 @@ public class AnalyserSetup {
                                     + " before-copies of affected shell files will be kept for"
                                     + " selective undo."));
         Instance i = ops.instance(m);
+        if (previous != null && !i.state.equals("absent"))
+            blocked.add("Close this home's Analyser " + previous.version
+                    + " before the upgrade, then rerun setup. Setup will not stop it or start a competing window.");
         // v1.40.3 derives its start-screen choice from this key at startup.
         // Never overwrite an existing choice or race a running app's whole-file saves.
         String client = recordedClient(m);
@@ -589,7 +632,11 @@ public class AnalyserSetup {
         s.put("jbang", fingerprint(m.jbang));
         s.put("claude", m.claude.isPresent() ? fingerprint(m.claude.get()) : "absent");
         s.put("launcher", fingerprint(m.launcher));
+        s.put("launcherMode", Files.isRegularFile(m.launcher, LinkOption.NOFOLLOW_LINKS)
+                ? PosixFilePermissions.toString(Files.getPosixFilePermissions(m.launcher)) : "not-regular");
         s.put("jar", fingerprint(m.jar()));
+        for (PinnedRelease release : UPGRADE_FROM)
+            s.put("previousJar:" + release.version, fingerprint(release.jar(m)));
         s.put("trust", fingerprint(m.trustFile()));
         s.put("registration", hash(canonical(registration(m))));
         s.put("appAccess", Boolean.toString(externalAccessConfigured(m)));
@@ -746,28 +793,57 @@ public class AnalyserSetup {
                             throw new IOException(
                                     "Trust command did not persist the exact release rule");
                     }
-                    case INSTALL -> {
+                    case INSTALL, UPGRADE -> {
                         Map<Path, byte[]> before = backupProfiles(m, runDir);
+                        boolean upgrade = action.kind == Kind.UPGRADE;
+                        if (upgrade) {
+                            PinnedRelease previous = previousRelease(m);
+                            if (previous == null || !ops.instance(m).state.equals("absent"))
+                                throw new PlanChanged("Close the previous Analyser and replan the upgrade");
+                            ops.verifyPrevious(m, previous);
+                            boolean cached = true;
+                            try { ops.verify(m); } catch (Exception missing) { cached = false; }
+                            if (!cached) {
+                                ops.run(m, 900, List.of(m.jbang.toString(), "info", "jar", "--fresh", JAR_URL), runDir);
+                                ops.verify(m);
+                                acceptOwnedChanges(m, ops, expected, Set.of("jar"));
+                            }
+                            effect.put("downloadVerifiedBeforeSwitch", true);
+                            unchanged(m, ops, expected);
+                            if (!ops.instance(m).state.equals("absent"))
+                                throw new PlanChanged("An Analyser opened during download; close it and replan");
+                            Path backup = runDir.resolve("previous-analyser-launcher");
+                            privateWrite(backup, new String(readOptional(m.launcher), StandardCharsets.UTF_8));
+                            effect.put("previousVersion", previous.version);
+                            effect.put("previousJar", previous.jar(m).toString());
+                            effect.put("previousJarSha256", previous.sha256);
+                            effect.put("launcherBackup", backup.toString());
+                            effect.put("previousLauncherMode", PosixFilePermissions.toString(Files.getPosixFilePermissions(m.launcher)));
+                            effect.put("previousLauncherFingerprint", fingerprint(backup));
+                            undo.add("Only while this home's Analyser is closed: restore the launcher from "
+                                    + backup + " with mode " + effect.get("previousLauncherMode")
+                                    + " only if the current launcher is absent or its fingerprint is still "
+                                    + hash(launcherText(JAR_URL))
+                                    + ". Preserve later edits; keep the previous JAR/cache and trust. "
+                                    + "Use a plugin that allows the restored release; this plugin also supports 1.40.2.");
+                            writeReceipt(m, runDir, receipt, false);
+                            unchanged(m, ops, expected);
+                            if (!ops.instance(m).state.equals("absent") || previousRelease(m) == null)
+                                throw new PlanChanged("An Analyser or launcher changed before the upgrade; close it and replan");
+                            ops.verifyPrevious(m, previous);
+                            ops.verify(m);
+                        }
+                        List<String> installCommand = new ArrayList<>(List.of(m.jbang.toString(), "app", "install"));
+                        if (upgrade) installCommand.add("--force");
+                        installCommand.addAll(List.of("--java", "21", "--name", "analyser", JAR_URL));
                         try {
-                            ops.run(
-                                    m,
-                                    900,
-                                    List.of(
-                                            m.jbang.toString(),
-                                            "app",
-                                            "install",
-                                            "--java",
-                                            "21",
-                                            "--name",
-                                            "analyser",
-                                            JAR_URL),
-                                    runDir);
-                            if (!validLauncher(m))
+                            ops.run(m, 900, installCommand, runDir);
+                            if (!validTargetLauncher(m))
                                 throw new IOException(
                                         "Installer did not produce the exact pinned launcher");
                             ops.verify(m);
                         } finally {
-                            if (validLauncher(m))
+                            if (!upgrade && validTargetLauncher(m))
                                 undo.add(
                                         "This run created "
                                                 + m.launcher
@@ -790,7 +866,7 @@ public class AnalyserSetup {
                                                             + " preserving later edits.");
                                 }
                         }
-                        owned.addAll(List.of("launcher", "jar"));
+                        owned.addAll(List.of("launcher", "launcherMode", "jar"));
                         for (Path f : profileFiles(m)) owned.add("profile:" + f);
                     }
                     case RECORD_CLIENT -> {
@@ -1093,6 +1169,10 @@ public class AnalyserSetup {
         if (!fileState(destination).equals(approvedState))
             throw new PlanChanged("Plugin runtime path changed after approval");
         byte[] before = readOptional(destination);
+        if (pluginJavaMatches(m, java)) {
+            effect.put("keptExistingJavaPath", true);
+            return;
+        }
         Path backup = dir.resolve("previous-plugin-java.txt");
         if (before != null) privateWrite(backup, new String(before, StandardCharsets.UTF_8));
         Path temp =
@@ -1207,7 +1287,23 @@ public class AnalyserSetup {
     }
 
     // distinguish a closed app from ambiguous or invalid setup state.
-    static class PluginAppClosed extends IOException {}
+    static class PluginAppClosed extends IOException {
+        String version;
+        Path launcher;
+    }
+
+    static class PluginUpgradeRequired extends IOException {
+        final String previous, required;
+        PluginUpgradeRequired(String previous, String required) {
+            this.previous = previous;
+            this.required = required;
+        }
+    }
+
+    static class PluginArtifactInvalid extends IOException {
+        final String version;
+        PluginArtifactInvalid(String version) { this.version = version; }
+    }
 
     static void requireLivePlugin(Instance instance) throws IOException {
         if (instance.state.equals("absent")) throw new PluginAppClosed();
@@ -1215,6 +1311,19 @@ public class AnalyserSetup {
     }
 
     static String pluginBridgeFailure(Exception failure) {
+        if (failure instanceof PluginUpgradeRequired upgrade)
+            return "Analyser " + upgrade.previous + " is installed; this plugin needs " + upgrade.required
+                    + ". Run /fluxtion-analyser:setup to upgrade. No downloads attempted.";
+        if (failure instanceof PluginArtifactInvalid artifact)
+            return "Analyser " + artifact.version + " is installed, but its pinned cached JAR could not be verified. "
+                    + "Run /fluxtion-analyser:setup for "
+                    + (artifact.version.equals(VERSION) ? "same-version recovery" : "upgrade")
+                    + " guidance. No downloads attempted.";
+        if (failure instanceof PluginAppClosed closed && closed.version != null && !closed.version.equals(VERSION))
+            return "Analyser " + closed.version + " is closed. Reopen it without upgrading using the existing launcher "
+                    + closed.launcher + ", then /mcp reconnect plugin:fluxtion-analyser:fluxtion-analyser"
+                    + " and confirm with native analyser_context. Alternatively run /fluxtion-analyser:setup"
+                    + " to review an upgrade to " + VERSION + ". No downloads attempted.";
         if (failure instanceof PluginAppClosed)
             return "Open the Analyser with /fluxtion-analyser:setup, then /mcp reconnect"
                        + " plugin:fluxtion-analyser:fluxtion-analyser and confirm with native"
@@ -1225,19 +1334,29 @@ public class AnalyserSetup {
     // use the approved installed JVM directly for both helper and verified local JAR.
     // Never invoke JBang's bootstrap here: it may download before processing --offline.
     static int pluginBridge(Machine m) throws Exception {
-        if (!m.os.contains("mac") || !validLauncher(m) || !Files.isExecutable(m.jbang))
+        PinnedRelease selected = installedRelease(m);
+        if (!m.os.contains("mac") || selected == null || !Files.isExecutable(m.jbang))
             throw new IOException("Setup required");
-        verifyExactJar(m, JAR_SHA256);
-        requireLivePlugin(new RealOps().instance(m));
+        requireCompatible(selected);
+        try { verifyPinnedJar(selected.jar(m), selected.sha256); }
+        catch (IOException invalid) { throw new PluginArtifactInvalid(selected.version); }
+        Instance instance = endpointState(m, SYSTEM_ENDPOINTS, selected.jar(m));
+        if (instance.state.equals("absent")) instance = discover(m);
+        try { requireLivePlugin(instance); }
+        catch (PluginAppClosed closed) {
+            closed.version = selected.version;
+            closed.launcher = m.launcher();
+            throw closed;
+        }
         // Direct JVM invocation is essential: JBang's shell may download before parsing --offline.
         var command =
                 List.of(
                         Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                         "-Duser.home=" + m.home,
                         "-jar",
-                        m.jar().toString(),
+                        selected.jar(m).toString(),
                         "--mcp");
-        ProcessBuilder builder = new ProcessBuilder(command).inheritIO();
+        ProcessBuilder builder = new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.INHERIT);
         builder.environment().clear();
         builder.environment().putAll(m.childEnv());
         Process bridge = builder.start();
@@ -1249,6 +1368,7 @@ public class AnalyserSetup {
                         });
         Runtime.getRuntime().addShutdownHook(stop);
         try {
+            relayPlugin(m, selected, bridge);
             return bridge.waitFor();
         } finally {
             if (bridge.isAlive()) stop.run();
@@ -1537,7 +1657,8 @@ public class AnalyserSetup {
                                                     "--help",
                                                     "-h")
                                             ::contains)
-                    || !fact.arguments.contains(m.jar().toString())) continue;
+                    || !(fact.arguments.contains(m.jar().toString())
+                            || UPGRADE_FROM.stream().anyMatch(r -> fact.arguments.contains(r.jar(m).toString())))) continue;
             List<String> homes =
                     fact.arguments.stream().filter(a -> a.startsWith("-Duser.home=")).toList();
             if (homes.size() == 1 && !absolute(Path.of(homes.get(0).substring(12))).equals(m.home))
@@ -1560,6 +1681,10 @@ public class AnalyserSetup {
     }
 
     static Instance endpointState(Machine m, EndpointView view) throws Exception {
+        return endpointState(m, view, m.jar());
+    }
+
+    static Instance endpointState(Machine m, EndpointView view, Path selectedJar) throws Exception {
         byte[] bytes = view.endpoint(m.endpoint);
         if (bytes == null) return Instance.absent();
         try {
@@ -1575,7 +1700,7 @@ public class AnalyserSetup {
                 return new Instance("blocked", pid, "unbound-process");
             // PID reuse and unrelated process files are refused; no token is needed for this
             // ownership check.
-            if (!process.arguments.contains(m.jar().toString())
+            if (!process.arguments.contains(selectedJar.toString())
                     || process.arguments.contains("--mcp"))
                 return new Instance("blocked", pid, "different-artifact-or-bridge");
             Optional<String> homeArg =
@@ -2475,7 +2600,10 @@ public class AnalyserSetup {
     }
 
     static Path verifyExactJar(Machine m, String expectedHash) throws Exception {
-        Path jar = m.jar();
+        return verifyPinnedJar(m.jar(), expectedHash);
+    }
+
+    static Path verifyPinnedJar(Path jar, String expectedHash) throws Exception {
         if (!Files.isRegularFile(jar, LinkOption.NOFOLLOW_LINKS)
                 || !fingerprint(jar).equals(expectedHash))
             throw new IOException(
@@ -2483,11 +2611,142 @@ public class AnalyserSetup {
         return jar;
     }
 
+    static String launcherText(String url) {
+        return "#!/bin/sh\nexec jbang run --java 21 " + url + " \"$@\"\n";
+    }
+
+    static boolean launcherMatches(Machine m, String url) throws Exception {
+        if (!Files.isRegularFile(m.launcher, LinkOption.NOFOLLOW_LINKS)
+                || !Files.isExecutable(m.launcher)) return false;
+        return launcherText(url).equals(new String(readOptional(m.launcher), StandardCharsets.UTF_8));
+    }
+
+    static PinnedRelease installedRelease(Machine m) throws Exception {
+        if (launcherMatches(m, TARGET_RELEASE.url)) return TARGET_RELEASE;
+        return previousRelease(m);
+    }
+
+    static void requireCompatible(PinnedRelease release) throws PluginUpgradeRequired {
+        // A per-release reviewed marker, not a permissive version-range guess.
+        if (!release.version.equals(release.minimumRequired))
+            throw new PluginUpgradeRequired(release.version, release.minimumRequired);
+    }
+
     static boolean validLauncher(Machine m) throws Exception {
-        byte[] bytes = readOptional(m.launcher);
-        if (bytes == null || !Files.isExecutable(m.launcher)) return false;
-        return new String(bytes, StandardCharsets.UTF_8)
-                .equals("#!/bin/sh\nexec jbang run --java 21 " + JAR_URL + " \"$@\"\n");
+        PinnedRelease release = installedRelease(m);
+        return release != null && release.version.equals(release.minimumRequired);
+    }
+
+    static String takeUpgradeNotice(Machine m, PinnedRelease release) {
+        if (release.version.equals(VERSION)) return null;
+        try {
+            Path dir = privateDirectory(m.home.resolve(".fluxtion-analyser/plugin-notices"));
+            Path marker = dir.resolve("context-upgrade-" + release.version + "-to-" + VERSION);
+            Files.createFile(marker, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+            return "Analyser " + release.version + " is connected; " + VERSION
+                    + " is available. Say 'set up the Fluxtion Analyser' to upgrade.";
+        } catch (FileAlreadyExistsException seen) {
+            return null;
+        } catch (IOException unavailable) {
+            return null; // A notice must not prevent a verified connection.
+        }
+    }
+
+    // A single-child relay, not a reconnecting proxy: preserve handshake and request IDs unchanged.
+    // Only a successful context response gains wrapper-owned metadata; stdout remains MCP JSON-RPC.
+    static void relayPlugin(Machine m, PinnedRelease release, Process bridge) throws Exception {
+        Set<String> contextIds = ConcurrentHashMap.newKeySet();
+        Thread input = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(bridge.getOutputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    rememberContext(line, contextIds);
+                    writer.write(line); writer.newLine(); writer.flush();
+                }
+            } catch (IOException closed) {
+                bridge.destroy();
+            }
+        }, "analyser-plugin-input");
+        input.setDaemon(true);
+        input.start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(bridge.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(contextReply(m, release, line, contextIds));
+                System.out.flush();
+                if (System.out.checkError()) throw new IOException("Host transport closed");
+            }
+        }
+    }
+
+    static void rememberContext(String line, Set<String> contextIds) {
+        if (line.length() > MAX_CONFIG) return;
+        try {
+            Object parsed = Json.read(line);
+            if (parsed instanceof Map<?, ?> request && request.get("id") != null
+                    && "tools/call".equals(request.get("method"))
+                    && request.get("params") instanceof Map<?, ?> params
+                    && "analyser_context".equals(params.get("name")))
+                contextIds.add(contextId(line));
+        } catch (RuntimeException ignored) {
+            // The child owns protocol errors; forward the original message unmodified.
+        }
+    }
+
+    // Match numeric IDs without rounding, while preserving their original wire representation.
+    static String contextId(String line) {
+        int[] span = Json.memberSpan(line, 0, "id");
+        String raw = line.substring(span[0], span[1]);
+        return raw.startsWith("\"") ? "string:" + Json.read(raw)
+                : "number:" + new java.math.BigDecimal(raw).stripTrailingZeros().toString();
+    }
+
+    static String contextReply(Machine m, PinnedRelease release, String line, Set<String> contextIds) {
+        if (line.length() > MAX_CONFIG) return line;
+        try {
+            Object parsed = Json.read(line);
+            if (!(parsed instanceof Map<?, ?> response) || response.get("id") == null
+                    || !contextIds.remove(contextId(line))
+                    || !(response.get("result") instanceof Map<?, ?> result)
+                    || Boolean.TRUE.equals(result.get("isError"))
+                    || !(result.get("content") instanceof List<?> content)) return line;
+            for (Object item : content) {
+                if (!(item instanceof Map<?, ?> block) || !"text".equals(block.get("type"))
+                        || !(block.get("text") instanceof String text)) continue;
+                Object bodyValue = Json.read(text);
+                if (!(bodyValue instanceof Map<?, ?> body) || !Boolean.TRUE.equals(body.get("ok"))) continue;
+                int[] resultSpan = Json.memberSpan(line, 0, "result");
+                int[] contentSpan = Json.memberSpan(line, resultSpan[0], "content");
+                int insertion = contentSpan[1] - 1;
+                if (line.charAt(contentSpan[0]) != '[' || line.charAt(insertion) != ']') return line;
+                Map<String, Object> metadata = new LinkedHashMap<>();
+                metadata.put("verifiedRelease", release.version);
+                String notice = takeUpgradeNotice(m, release);
+                if (notice != null) {
+                    metadata.put("upgradeNotice", notice);
+                    System.err.println(notice);
+                }
+                String annotation = Json.write(Map.of("type", "text", "text",
+                        Json.write(Map.of("pluginBridge", metadata))));
+                // Splice only a new block: IDs, existing content, numbers, escapes and whitespace
+                // remain byte-identical UTF-8. Never serialise a parsed child response.
+                return line.substring(0, insertion) + "," + annotation + line.substring(insertion);
+            }
+        } catch (RuntimeException ignored) {
+            // Annotation failure must not replace a tool response or corrupt the stream.
+        }
+        return line;
+    }
+
+    static boolean validTargetLauncher(Machine m) throws Exception {
+        return launcherMatches(m, JAR_URL);
+    }
+
+    static PinnedRelease previousRelease(Machine m) throws Exception {
+        for (PinnedRelease release : UPGRADE_FROM)
+            if (launcherMatches(m, release.url)) return release;
+        return null;
     }
 
     static boolean trusted(Machine m) throws Exception {
@@ -2712,6 +2971,29 @@ public class AnalyserSetup {
             if (j.i != j.s.length())
                 throw new IllegalArgumentException("trailing JSON content at " + j.i);
             return v;
+        }
+
+        // Locate a member's original value, using this parser only to advance over values.
+        // Reject duplicate target members rather than ambiguously annotating a response.
+        static int[] memberSpan(String text, int start, String member) {
+            Json j = new Json(text, false);
+            j.i = start;
+            j.ws(); j.expect('{'); j.ws();
+            int[] found = null;
+            while (j.s.charAt(j.i) != '}') {
+                String key = j.string(); j.ws(); j.expect(':'); j.ws();
+                int valueStart = j.i;
+                j.value();
+                if (key.equals(member)) {
+                    if (found != null) throw new IllegalArgumentException("duplicate member");
+                    found = new int[] { valueStart, j.i };
+                }
+                j.ws();
+                if (j.s.charAt(j.i) == '}') break;
+                j.expect(','); j.ws();
+            }
+            if (found == null) throw new IllegalArgumentException("missing member");
+            return found;
         }
 
         private Object value() {
