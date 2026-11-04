@@ -1,0 +1,15 @@
+{
+  "name": "telamin",
+  "owner": {
+    "name": "Telamin"
+  },
+  "metadata": {
+    "description": "Telamin tools for building and inspecting Fluxtion applications."
+  },
+  "plugins": [
+    {
+      "name": "fluxtion-analyser",
+      "source": "./fluxtion-analyser"
+    }
+  ]
+}

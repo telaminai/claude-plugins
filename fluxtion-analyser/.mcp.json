@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "fluxtion-analyser": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/launch.sh"
+    }
+  }
+}

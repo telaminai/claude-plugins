@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+analyser_plugin_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+. "$analyser_plugin_root/scripts/runtime.sh"
+[ "$#" -gt 0 ] || { echo "Usage: analyser-setup plan|apply [--plan ID]" >&2; exit 2; }
+analyser_action=$1
+shift
+case "$analyser_action" in plan|apply) ;; *) echo "Expected plan or apply" >&2; exit 2 ;; esac
+# Route/source cannot be overridden by caller options: the bundled wrapper supplies them first.
+exec "$analyser_jbang" "$analyser_plugin_root/scripts/AnalyserSetup.java" "$analyser_action" --program "$analyser_plugin_root/scripts/AnalyserSetup.java" --route claude-code-plugin "$@"
