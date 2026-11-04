@@ -20,14 +20,14 @@ import java.util.stream.Stream;
  * Supported automatic route: macOS/Claude Code. Other platforms remain acceptance work.
  */
 public class AnalyserSetup {
-    static final String VERSION = "1.40.2";
+    static final String VERSION = "1.40.3";
     static final String RELEASE_DIR =
             "https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v"
                     + VERSION
                     + "/";
     static final String JAR_URL = RELEASE_DIR + "fluxtion-auditlog-analyser.jar";
     static final String JAR_SHA256 =
-            "25c51f9bd5940c84a7820062d4ba56d6a961b071b968ec48f51006c7c3591265";
+            "1cb19a64e9866031e5502908f26f78bc886a9d2e1a46fd281929425792eabc7c";
     static final String SERVER = "fluxtion-analyser";
     static final String SEP = File.pathSeparator;
     static final String SCHEMA = "chat-setup-6";
@@ -381,9 +381,9 @@ public class AnalyserSetup {
         if (Files.exists(m.launcher)) {
             if (!validLauncher(m))
                 blocked.add(
-                        "The existing analyser launcher is not the exact supported 1.40.2 launcher;"
+                        "The existing analyser launcher is not the exact supported 1.40.3 launcher;"
                                 + " it will not be changed.");
-            else kept.add("Existing 1.40.2 launcher is kept at " + m.launcher);
+            else kept.add("Existing 1.40.3 launcher is kept at " + m.launcher);
             try {
                 ops.verify(m);
             } catch (Exception e) {
@@ -395,14 +395,14 @@ public class AnalyserSetup {
             actions.add(
                     new Action(
                             Kind.INSTALL,
-                            "Install analyser 1.40.2 in "
+                            "Install analyser 1.40.3 in "
                                     + m.launcher.getParent()
                                     + "; verify its exact cached JAR. JBang may download Java 21"
                                     + " and update shell PATH, j! and JAVA_HOME. Private"
                                     + " before-copies of affected shell files will be kept for"
                                     + " selective undo."));
         Instance i = ops.instance(m);
-        // v1.40.2 derives its start-screen choice from this key at startup.
+        // v1.40.3 derives its start-screen choice from this key at startup.
         // Never overwrite an existing choice or race a running app's whole-file saves.
         String client = recordedClient(m);
         if (client != null) kept.add("Existing Analyser AI client choice is kept.");
@@ -421,7 +421,7 @@ public class AnalyserSetup {
             actions.add(
                     new Action(
                             Kind.START_APP,
-                            "Open the verified local 1.40.2 JAR for "
+                            "Open the verified local 1.40.3 JAR for "
                                     + m.home
                                     + " with persistent external MCP/REST access enabled. Local"
                                     + " clients can use its action API until access is turned"
@@ -1006,7 +1006,7 @@ public class AnalyserSetup {
                         "Signed in for builds. The Analyser's Compiler account view does not show"
                                 + " this sign-in yet.");
             // the plugin owns the connection. The app's user-scope registration UI cannot
-            // detect it in 1.40.2 and can offer a duplicate; retain this note even on idle reruns.
+            // detect it in 1.40.3 and can offer a duplicate; retain this note even on idle reruns.
             if (pluginRoute(m)) {
                 receipt.put("pluginConnectionNote", PLUGIN_CONNECTION_NOTE);
                 System.out.println(PLUGIN_CONNECTION_NOTE);
@@ -1591,7 +1591,7 @@ public class AnalyserSetup {
         }
     }
 
-    // exact machine-tier contract in released Analyser v1.40.2, AiSetupState.Client.
+    // exact machine-tier contract in released Analyser v1.40.3, AiSetupState.Client.
     static final String CLIENT_KEY = "assistant.setup.client";
     static final String PLUGIN_CONNECTION_NOTE =
             "The connection comes from the plugin; you do not need the Analyser's Set up AI for "

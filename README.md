@@ -4,7 +4,7 @@ Tools for building and inspecting Fluxtion applications with your assistant.
 
 ## Fluxtion Analyser
 
-A preview for macOS and the Claude Code interactive terminal. The plugin helps install and open the
+For macOS and the Claude Code interactive terminal. The plugin helps install and open the
 Analyser and connects Claude Code to inspect audit records beside their graph.
 
 ```text

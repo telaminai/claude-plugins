@@ -5,7 +5,7 @@ description: Set up, install or connect the Fluxtion Analyser to Claude Code on 
 
 # Set up the Fluxtion Analyser
 
-**macOS preview.** Pinned Analyser **1.40.2**; automatic route: **macOS and Claude Code**.
+**macOS automatic setup.** Pinned Analyser **1.40.3**; automatic route: **macOS and Claude Code**.
 This plugin bundles the same setup program as the URL route. No helper download or source checksum step.
 The manual app-UI route remains in [REFERENCE.md](REFERENCE.md).
 
@@ -18,17 +18,19 @@ Copy prompt: **Set up the Fluxtion Analyser and connect it to this assistant.**
 Before downloads or commands that change state, resolve the home, JBang/cache and Claude config destinations
 from the session's environment using local reads. Reuse paths already supplied by the host. If shell
 discovery is necessary, batch destination and executable checks into one read-only shell call; do not issue
-separate `pwd`, `ls`, `env` and `command -v` calls. In that same call, use macOS `plutil` to validate the resolved Claude JSON file and check whether
-`mcpServers.fluxtion-analyser` exists, with extracted output sent to `/dev/null`. Report only present, absent,
-or unreadable and its file path. Do not print the profile, registration values or credential contents.
-A missing file means no user entry; malformed or unreadable JSON needs attention, not an absent-entry claim.
+separate `pwd`, `ls`, `env` and `command -v` calls. In that same call, run the bundled read-only
+`osascript -l JavaScript "${CLAUDE_PLUGIN_ROOT}/scripts/inspect-config.js" "<resolved Claude JSON path>"`
+with the actual resolved path. It parses JSON (including nulls) and checks `mcpServers.fluxtion-analyser`;
+it prints only present, absent or unreadable. Report that status and the path, never the JSON or registration
+values. A missing file is absent; malformed/unreadable input needs attention. Do not use `plutil -lint`
+for JSON: a valid Claude profile can contain nulls that a property-list parser rejects.
 Do not run `claude mcp get` before consent: it can start the existing server for a health check. Respect explicit overrides. Explain preparation yourself;
 the person does not need to request technical steps. Present one question with those actual destinations:
 
 > Shall I set up the Analyser? I will:
 > 1. Run the setup helper bundled with this plugin; JBang compiles it on first run.
 >    Install JBang if missing; Java and cache downloads may be needed for preparation and Java 21 for the app.
-> 2. Trust only the Analyser 1.40.2 release folder in JBang, install its analyser command and verify its JAR.
+> 2. Trust only the Analyser 1.40.3 release folder in JBang, install its analyser command and verify its JAR.
 >    When installation is needed, JBang may add PATH, the j! alias and JAVA_HOME to shell startup files,
 >    affecting future Java builds; these edits are conditional, not guaranteed.
 > 3. While the Analyser is closed, record Claude Code as its AI client if no choice is saved, preserving other
@@ -75,6 +77,19 @@ on cancellation stop only its children. If the host cannot supervise it, use the
   analyser_bootstrap="$(mktemp)"
   trap 'rm -f "$analyser_bootstrap"' EXIT
   curl -fsSL https://sh.jbang.dev -o "$analyser_bootstrap"
+  if [ "${JBANG_DEFAULT_JAVA_VERSION:-21}" = 21 ]; then
+  # Preserve an explicit Java 21 first, then discover installed Java 21 without changing shell profiles.
+  analyser_existing_java="$(/usr/libexec/java_home -v 21 2>/dev/null || :)"
+  for analyser_java_candidate in "${JAVA_HOME:-}" "$analyser_existing_java" "$HOME"/.sdkman/candidates/java/21*; do
+    if [ -x "$analyser_java_candidate/bin/java" ] &&
+       [ -r "$analyser_java_candidate/release" ] &&
+       grep -Eq '^JAVA_VERSION="21([.+-]|")' "$analyser_java_candidate/release"; then
+      export JAVA_HOME="$analyser_java_candidate"
+      export PATH="$JAVA_HOME/bin:$PATH"
+      break
+    fi
+  done
+  fi
   JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" bash "$analyser_bootstrap" version
 )
 ```
@@ -193,7 +208,7 @@ Preserve any qualification about an unvalidated saved credential. When signed in
 The Analyser's Compiler account view does not show this sign-in yet.** If skipped, offer a later rerun.
 
 Relay `pluginConnectionNote` on every apply, including a rerun: **The connection comes from the plugin;
-you do not need the Analyser's Set up AI for Claude Code.** In 1.40.2 that UI checks the user-scope name and
+you do not need the Analyser's Set up AI for Claude Code.** In 1.40.3 that UI checks the user-scope name and
 can offer to add it again. If an entry reappears, run the exact plan and offer removal with consent and a
 private backup; never silently remove it. Disable the old loaded connection in `/mcp` if it remains.
 Relay any `clientDisplayNote` as a display limitation. Do not send a plugin user through the app's
@@ -204,11 +219,17 @@ paths in the MCP registration work without it; do not edit shell profiles or cla
 
 After Confirmed: **The Analyser is ready. Pick one of its start-screen options, or tell me what you want to build.**
 Templates supply authoring skills. For a subsequent project request, use the public
-[starter catalogue](https://fluxtion-playground.dev/starter-templates/index.json); for example, the
-[AOT starter download](https://fluxtion-playground.dev/start/scaffold?template=fluxtion-aot).
+[starter catalogue](https://fluxtion-playground.dev/starter-templates/index.json). For Analyser-assisted
+Spring authoring, offer the [audit-analyser bundle](https://fluxtion-playground.dev/start/scaffold?template=analyser-bundle)
+first: it carries the authoring and evidence skills. The [AOT starter](https://fluxtion-playground.dev/start/scaffold?template=fluxtion-aot)
+is a smaller example and does not carry those skills. Check the selected template's actual contents and
+catalogue skill metadata; do not infer skills from its name. After scaffolding, tell the person to start
+Claude Code inside the new project directory so project skills are discovered. Preserve this plugin's
+connection; use setup and reconnect if the app is closed, not another user-scope registration.
 Read the downloaded PROJECT.md before authoring. There is no need to inspect JAR internals to find the catalogue.
-**Java for project builds.** Starter projects build with `./mvnw` and run with `./run.sh`; both need JDK 21+
-through `JAVA_HOME` or `java` on PATH. Setup's Java is private to JBang and provides neither, and macOS's
+**Java for project builds.** Use the selected project's PROJECT.md and RUNBOOK.md for commands. The bundle uses `./run-server.sh`
+or `./run-and-export.sh`; the standalone AOT starter uses `./run.sh`. Builds and runs need JDK 21+
+through `JAVA_HOME` or `java` on PATH. A Java downloaded by JBang need not be exposed through either, and macOS's
 `/usr/bin/java` is only a stub when no JDK is installed. Before the first build, run `java -version`. If it fails
 or reports below 21, run each build and run command with JBang's Java 21 for that command only:
 
@@ -233,7 +254,9 @@ or reports below 21, run each build and run command with JBang's Java 21 for tha
 ```
 
 The lookup also supports an existing JBang on PATH or in Homebrew; it does not assume setup installed
-JBang under your home. Use the same block with `./run.sh` in place of `./mvnw -B package` when running.
+JBang under your home. Use the same scoped Java environment for the documented setup, validate, generate and run commands.
+For the bundle, run `./run-and-export.sh`; for the standalone AOT starter, run `./run.sh`.
+After editing a Spring graph, use its `./generate.sh` authoring path, not a direct Maven substitute.
 Do not edit shell profiles for this. Tell the person that builds outside the assistant need a JDK 21+ on PATH
 or this `JAVA_HOME`.
 Setup does not generate or run projects. Report version, paths, diagnostics and actual native result.

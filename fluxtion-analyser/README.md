@@ -25,7 +25,7 @@ setup can download them. JBang installation may edit shell PATH, j! and JAVA_HOM
 The plugin supplies the MCP server. Setup does not add a user-scope registration. If one already exists,
 Claude offers to remove that exact entry with consent and a private backup, avoiding duplicate connections.
 The connection comes from the plugin; you do not need the Analyser's Set up AI for Claude Code. In Analyser
-1.40.2 that route can offer a user-scope entry again. If you add one, rerun plugin setup to review its removal.
+1.40.3 that route can offer a user-scope entry again. If you add one, rerun plugin setup to review its removal.
 
 ## Connect and use it
 
@@ -47,13 +47,19 @@ external access. A sign-in-only rerun keeps an already confirmed connection.
 After confirmation, choose an option on the Analyser start screen or tell Claude what you want to build.
 For builds on a Mac without Java, the setup skill explains how to use JBang's Java 21 for each command.
 
-## Preview scope
+## Supported scope
 
-Tested on macOS with Claude Code in an interactive terminal, using a locally loaded plugin and the staging
-compiler. Marketplace installation, managed team rollout, other operating systems, other hosts and the
-desktop app have not been acceptance-tested. In the last Manual-mode run, setup required seven host approvals, plus one on the sign-in rerun.
-Five or fewer is a target; the refined flow has not had a new cold count. Production verification remains pending. The manual installation route remains available for people and teams
-who do not allow an assistant to install software.
+The earlier preview passed a production marketplace trial on macOS with Claude Code 2.1.317/2.1.318
+in an interactive Manual-mode session, including a Java-free installation, native MCP confirmation,
+compiler sign-in, an AOT build/audit, day-two recovery and duplicate-entry removal. That trial counted
+four setup command approvals plus one native MCP approval, and none on the sign-in rerun. Counts depend
+on the host's existing rules and commands. Release 0.1.0 includes the follow-up fixes; its acceptance results are recorded separately.
+Managed rollout, other operating systems, other hosts and the desktop app remain untested. The manual
+installation route remains available for people and teams who do not allow assistant-led installation.
+
+On the Java-free trial machine, downloads totalled about 420 MB and installed files about 580 MB.
+The one Java 21 download accounts for about 190 MB compressed / 335 MB on disk; the Analyser adds about
+227 MB. Sizes vary with platform and version. Setup reuses a detected installed Java 21 when available.
 
 ## Privacy and undo
 

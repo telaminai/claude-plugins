@@ -1,7 +1,7 @@
 {
   "name": "fluxtion-analyser",
-  "version": "0.1.0-preview.1",
-  "description": "Set up the Fluxtion Analyser and connect Claude Code. Preview for macOS.",
+  "version": "0.1.0",
+  "description": "Set up the Fluxtion Analyser and connect Claude Code on macOS.",
   "author": {
     "name": "Telamin"
   },

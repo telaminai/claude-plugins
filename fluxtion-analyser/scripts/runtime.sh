@@ -6,6 +6,19 @@ export JBANG_DIR="${JBANG_DIR:-$HOME/.jbang}"
 export JBANG_CACHE_DIR="${JBANG_CACHE_DIR:-$JBANG_DIR/cache}"
 # JBang, the helper and the Analyser share one JDK: JBang's own default (17) would add a second download.
 export JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}"
+if [ "$JBANG_DEFAULT_JAVA_VERSION" = 21 ]; then
+# Preserve an explicit Java 21 first, then discover installed Java 21 without changing shell profiles.
+analyser_existing_java="$(/usr/libexec/java_home -v 21 2>/dev/null || :)"
+for analyser_java_candidate in "${JAVA_HOME:-}" "$analyser_existing_java" "$HOME"/.sdkman/candidates/java/21*; do
+  if [ -x "$analyser_java_candidate/bin/java" ] &&
+     [ -r "$analyser_java_candidate/release" ] &&
+     grep -Eq '^JAVA_VERSION="21([.+-]|")' "$analyser_java_candidate/release"; then
+    export JAVA_HOME="$analyser_java_candidate"
+    export PATH="$JAVA_HOME/bin:$PATH"
+    break
+  fi
+done
+fi
 # the same scoped PATH is used by both plan and apply; no profile edits.
 if ! command -v claude >/dev/null 2>&1 && [ -x "$HOME/.local/bin/claude" ]; then
   export PATH="$HOME/.local/bin:$PATH"
