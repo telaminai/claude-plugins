@@ -263,7 +263,7 @@ public class AnalyserSetup {
                 try {
                     result = pluginBridge(Machine.detect(Path.of(source.get())));
                 } catch (Exception failure) {
-                    System.err.println(pluginBridgeFailure(failure));
+                    if (!relayOrphaned) System.err.println(pluginBridgeFailure(failure));
                     result = 2;
                 }
                 System.exit(result);
@@ -1356,6 +1356,15 @@ public class AnalyserSetup {
                         "-jar",
                         selected.jar(m).toString(),
                         "--mcp");
+        return relayChild(m, selected, command);
+    }
+
+    static final Duration ORPHAN_POLL = Duration.ofSeconds(5);
+    // Set before the watchdog exits so a racing main thread does not report a setup failure.
+    static volatile boolean relayOrphaned;
+
+    // Start the --mcp child and relay stdio until EOF, child exit, or orphaning of this relay.
+    static int relayChild(Machine m, PinnedRelease selected, List<String> command) throws Exception {
         ProcessBuilder builder = new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.INHERIT);
         builder.environment().clear();
         builder.environment().putAll(m.childEnv());
@@ -1367,13 +1376,67 @@ public class AnalyserSetup {
                             bridge.destroy();
                         });
         Runtime.getRuntime().addShutdownHook(stop);
+        // launch.sh execs this JVM, so the parent recorded here is Claude Code itself. If Claude is
+        // killed while another process still holds our stdin, EOF never arrives; the parent check
+        // is then the only signal, and the child (whose parent is this live relay) cannot see it.
+        // Always installed: an unavailable parent at start counts as orphaned, never as "no watchdog".
+        Thread watchdog =
+                orphanWatchdog(
+                        ProcessHandle.current().parent(),
+                        ORPHAN_POLL,
+                        () -> {
+                            relayOrphaned = true;
+                            System.err.println("Analyser plugin bridge: Claude Code has gone; stopping the bridge.");
+                            stop.run();
+                            System.exit(0);
+                        });
         try {
             relayPlugin(m, selected, bridge);
             return bridge.waitFor();
         } finally {
+            watchdog.interrupt();
             if (bridge.isAlive()) stop.run();
-            Runtime.getRuntime().removeShutdownHook(stop);
+            try { Runtime.getRuntime().removeShutdownHook(stop); }
+            catch (IllegalStateException shuttingDown) { /* watchdog exit already in progress; the hook runs stop */ }
         }
+    }
+
+    // originalAlive is ProcessHandle.isAlive() of the handle taken at start, which also compares
+    // the start time, so a reused pid never counts. A zombie parent still reads as alive, but once
+    // a parent exits its children are re-parented (launchd/init), so the current parent pid
+    // changes too; both must hold. A recorded parent of pid 1 means Claude had already gone before
+    // the watchdog started (e.g. during the source-mode compile), so that is orphaned at once.
+    static boolean attached(long originalPid, boolean originalAlive, Optional<Long> currentParentPid) {
+        return originalPid != 1 && originalAlive && currentParentPid.map(pid -> pid == originalPid).orElse(false);
+    }
+
+    // The watchdog for a relay whose parent at start was `original`. It is always started; an
+    // unavailable initial parent (empty) means the relay cannot prove it is attached, so it is
+    // treated as orphaned at once, mirroring the Analyser's McpBridge.launch.
+    static Thread orphanWatchdog(Optional<ProcessHandle> original, Duration poll, Runnable exit) {
+        return exitWhenOrphaned(relayAttached(original), poll, exit);
+    }
+
+    static java.util.function.BooleanSupplier relayAttached(Optional<ProcessHandle> original) {
+        return () -> original.map(p -> attached(p.pid(), p.isAlive(),
+                ProcessHandle.current().parent().map(ProcessHandle::pid))).orElse(false);
+    }
+
+    static Thread exitWhenOrphaned(java.util.function.BooleanSupplier stillAttached, Duration poll, Runnable exit) {
+        Thread watchdog =
+                new Thread(
+                        () -> {
+                            try {
+                                while (stillAttached.getAsBoolean()) Thread.sleep(poll.toMillis());
+                                exit.run();
+                            } catch (InterruptedException stopped) {
+                                Thread.currentThread().interrupt();
+                            }
+                        },
+                        "analyser-plugin-orphan-watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
+        return watchdog;
     }
 
     // removing a user entry is an explicit, plan-bound effect, never implicit

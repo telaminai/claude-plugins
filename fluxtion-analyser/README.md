@@ -41,6 +41,10 @@ the new JAR before replacing the launcher, keeps a private backup, and preserves
 Reconnect afterwards and ask Claude to confirm with its native `analyser_context` call.
 Until 0.1.1 is published, plugin 0.1.0 requires the [manual preview upgrade](skills/setup/REFERENCE.md#manual-upgrade-including-while-using-plugin-010).
 
+Plugin 0.1.2 stops its bridge, and the Analyser `--mcp` process it started, within about five seconds after the
+Claude Code session that launched it exits, even when another process still holds the connection open. The
+desktop app is not affected.
+
 ## Connect and use it
 
 In the tested interactive terminal, run this when asked:
