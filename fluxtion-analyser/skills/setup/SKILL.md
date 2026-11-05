@@ -5,7 +5,7 @@ description: Set up, install or connect the Fluxtion Analyser to Claude Code on 
 
 # Set up the Fluxtion Analyser
 
-**macOS automatic setup.** Pinned Analyser **1.40.4**; automatic route: **macOS and Claude Code**.
+**macOS automatic setup.** Pinned Analyser **1.40.5**; automatic route: **macOS and Claude Code**.
 This plugin bundles the same setup program as the URL route. No helper download or source checksum step.
 The manual app-UI route remains in [REFERENCE.md](REFERENCE.md).
 
@@ -16,7 +16,7 @@ Copy prompt: **Set up the Fluxtion Analyser and connect it to this assistant.**
 ## Update notices
 
 Updating the plugin does not automatically upgrade the app. The bridge can continue using the exact verified
-1.40.2 or 1.40.3 release. If its native context response has `pluginBridge.upgradeNotice`, relay it once in this conversation: say “set up
+1.40.2, 1.40.3 or 1.40.4 release. If its native context response has `pluginBridge.upgradeNotice`, relay it once in this conversation: say “set up
 the Fluxtion Analyser” to upgrade. Do not run setup or upgrade just because the notice appears. The bridge
 remembers this notice per home/release pair and also writes it to stderr for diagnostics.
 A future release marked upgrade-required must be upgraded before connecting. Only a native context call
@@ -39,7 +39,7 @@ the person does not need to request technical steps. Present one question with t
 > Shall I set up the Analyser? I will:
 > 1. Run the setup helper bundled with this plugin; JBang compiles it on first run.
 >    Install JBang if missing; Java and cache downloads may be needed for preparation and Java 21 for the app.
-> 2. Trust only the Analyser 1.40.4 release folder in JBang, install its analyser command and verify its JAR.
+> 2. Trust only the Analyser 1.40.5 release folder in JBang, install its analyser command and verify its JAR.
 >    When installation is needed, JBang may add PATH, the j! alias and JAVA_HOME to shell startup files,
 >    affecting future Java builds; these edits are conditional, not guaranteed.
 > 3. While the Analyser is closed, record Claude Code as its AI client if no choice is saved, preserving other
@@ -120,7 +120,7 @@ if there is no SIGN_IN action, use `plan-id` because there is no new sign-in to 
 An existing valid sign-in is retained. Never silently change the answer.
 
 When the plan proposes UPGRADE, name only that case in the consent question: “Upgrade your verified
-Analyser 1.40.2 or 1.40.3 to 1.40.4, keeping your settings and sign-in? I will download and verify the new JAR before
+Analyser 1.40.2, 1.40.3 or 1.40.4 to 1.40.5, keeping your settings and sign-in? I will download and verify the new JAR before
 replacing the launcher, keep a private backup and the old cache/trust for undo, then open the app.”
 This is a replacement requiring specific approval; a previous install-only answer does not approve it.
 If the old app is open, ask the person to close it and replan. Never stop their app yourself. A failed download
@@ -179,9 +179,9 @@ receipt cannot inspect that session. Its `nativeConfirmation` is “not assessed
 that a previous native confirmation was lost. Reconnect when this apply started the app or prepared its
 bridge (`pluginReconnectRecommended`), or when native tools are unavailable.
 
-**Day two: Analyser closed.** If you kept compatible 1.40.2 or 1.40.3, reopen the existing launcher at
+**Day two: Analyser closed.** If you kept compatible 1.40.2, 1.40.3 or 1.40.4, reopen the existing launcher at
 `JBANG_DIR/bin/analyser` (normally `~/.jbang/bin/analyser`) to stay on that version; setup instead proposes
-an upgrade. Reconnect and confirm with native `analyser_context`. For the current 1.40.4, say
+an upgrade. Reconnect and confirm with native `analyser_context`. For the current 1.40.5, say
 “set up the Fluxtion Analyser” again: inspect the plan, which normally opens the existing app (START_APP)
 and refreshes its installed Java path (PREPARE_PLUGIN). Keep the existing install, access and plugin declaration;
 ask for any extra changes under the consent rules above. After opening it, reconnect the plugin and call
@@ -226,7 +226,7 @@ Preserve any qualification about an unvalidated saved credential. When signed in
 The Analyser's Compiler account view does not show this sign-in yet.** If skipped, offer a later rerun.
 
 Relay `pluginConnectionNote` on every apply, including a rerun: **The connection comes from the plugin;
-you do not need the Analyser's Set up AI for Claude Code.** In 1.40.4 that UI checks the user-scope name and
+you do not need the Analyser's Set up AI for Claude Code.** In 1.40.5 that UI checks the user-scope name and
 can offer to add it again. If an entry reappears, run the exact plan and offer removal with consent and a
 private backup; never silently remove it. Disable the old loaded connection in `/mcp` if it remains.
 Relay any `clientDisplayNote` as a display limitation. Do not send a plugin user through the app's
