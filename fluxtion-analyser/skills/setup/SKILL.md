@@ -5,7 +5,7 @@ description: Set up, install or connect the Fluxtion Analyser to Claude Code on 
 
 # Set up the Fluxtion Analyser
 
-**macOS automatic setup.** Pinned Analyser **1.40.6**; automatic route: **macOS and Claude Code**.
+**macOS automatic setup.** Pinned Analyser **1.41.2**; automatic route: **macOS and Claude Code**.
 This plugin bundles the same setup program as the URL route. No helper download or source checksum step.
 The manual app-UI route remains in [REFERENCE.md](REFERENCE.md).
 
@@ -16,7 +16,7 @@ Copy prompt: **Set up the Fluxtion Analyser and connect it to this assistant.**
 ## Update notices
 
 Updating the plugin does not automatically upgrade the app. The bridge can continue using the exact verified
-1.40.2, 1.40.3, 1.40.4 or 1.40.5 release. If its native context response has `pluginBridge.upgradeNotice`, relay it once in this conversation: say “set up
+1.40.2, 1.40.3, 1.40.4, 1.40.5 or 1.40.6 release. If its native context response has `pluginBridge.upgradeNotice`, relay it once in this conversation: say “set up
 the Fluxtion Analyser” to upgrade. Do not run setup or upgrade just because the notice appears. The bridge
 remembers this notice per home/release pair and also writes it to stderr for diagnostics.
 A future release marked upgrade-required must be upgraded before connecting. Only a native context call
@@ -39,7 +39,7 @@ the person does not need to request technical steps. Present one question with t
 > Shall I set up the Analyser? I will:
 > 1. Run the setup helper bundled with this plugin; JBang compiles it on first run.
 >    Install JBang if missing; Java and cache downloads may be needed for preparation and Java 21 for the app.
-> 2. Trust only the Analyser 1.40.6 release folder in JBang, install its analyser command and verify its JAR.
+> 2. Trust only the Analyser 1.41.2 release folder in JBang, install its analyser command and verify its JAR.
 >    When installation is needed, JBang may add PATH, the j! alias and JAVA_HOME to shell startup files,
 >    affecting future Java builds; these edits are conditional, not guaranteed.
 > 3. While the Analyser is closed, record Claude Code as its AI client if no choice is saved, preserving other
@@ -120,7 +120,7 @@ if there is no SIGN_IN action, use `plan-id` because there is no new sign-in to 
 An existing valid sign-in is retained. Never silently change the answer.
 
 When the plan proposes UPGRADE, name only that case in the consent question: “Upgrade your verified
-Analyser 1.40.2, 1.40.3, 1.40.4 or 1.40.5 to 1.40.6, keeping your settings and sign-in? I will download and verify the new JAR before
+Analyser 1.40.2, 1.40.3, 1.40.4, 1.40.5 or 1.40.6 to 1.41.2, keeping your settings and sign-in? I will download and verify the new JAR before
 replacing the launcher, keep a private backup and the old cache/trust for undo, then open the app.”
 This is a replacement requiring specific approval; a previous install-only answer does not approve it.
 If the old app is open, ask the person to close it and replan. Never stop their app yourself. A failed download
@@ -179,9 +179,9 @@ receipt cannot inspect that session. Its `nativeConfirmation` is “not assessed
 that a previous native confirmation was lost. Reconnect when this apply started the app or prepared its
 bridge (`pluginReconnectRecommended`), or when native tools are unavailable.
 
-**Day two: Analyser closed.** If you kept compatible 1.40.2, 1.40.3, 1.40.4 or 1.40.5, reopen the existing launcher at
+**Day two: Analyser closed.** If you kept compatible 1.40.2, 1.40.3, 1.40.4, 1.40.5 or 1.40.6, reopen the existing launcher at
 `JBANG_DIR/bin/analyser` (normally `~/.jbang/bin/analyser`) to stay on that version; setup instead proposes
-an upgrade. Reconnect and confirm with native `analyser_context`. For the current 1.40.6, say
+an upgrade. Reconnect and confirm with native `analyser_context`. For the current 1.41.2, say
 “set up the Fluxtion Analyser” again: inspect the plan, which normally opens the existing app (START_APP)
 and refreshes its installed Java path (PREPARE_PLUGIN). Keep the existing install, access and plugin declaration;
 ask for any extra changes under the consent rules above. After opening it, reconnect the plugin and call
@@ -226,7 +226,7 @@ Preserve any qualification about an unvalidated saved credential. When signed in
 The Analyser's Compiler account view does not show this sign-in yet.** If skipped, offer a later rerun.
 
 Relay `pluginConnectionNote` on every apply, including a rerun: **The connection comes from the plugin;
-you do not need the Analyser's Set up AI for Claude Code.** In 1.40.6 that UI checks the user-scope name and
+you do not need the Analyser's Set up AI for Claude Code.** In 1.41.2 that UI checks the user-scope name and
 can offer to add it again. If an entry reappears, run the exact plan and offer removal with consent and a
 private backup; never silently remove it. Disable the old loaded connection in `/mcp` if it remains.
 Relay any `clientDisplayNote` as a display limitation. Do not send a plugin user through the app's
@@ -236,17 +236,25 @@ For terminal use, relay `terminalPathNote` with the actual launcher directory: e
 paths in the MCP registration work without it; do not edit shell profiles or claim they were changed.
 
 After Confirmed: **The Analyser is ready. Pick one of its start-screen options, or tell me what you want to build.**
-Templates supply authoring skills. For a subsequent project request, use the public
-[starter catalogue](https://fluxtion-playground.dev/starter-templates/index.json). For Analyser-assisted
-Spring authoring, offer the [audit-analyser bundle](https://fluxtion-playground.dev/start/scaffold?template=analyser-bundle)
-first: it carries the authoring and evidence skills. The [AOT starter](https://fluxtion-playground.dev/start/scaffold?template=fluxtion-aot)
-is a smaller example and does not carry those skills. Check the selected template's actual contents and
-catalogue skill metadata; do not infer skills from its name. After scaffolding, tell the person to start
+Templates supply authoring skills. **For a new project, start with the
+[Java-authoring starter](https://fluxtion-playground.dev/start/scaffold?template=java-authoring)** (“Java authoring
+(Mongoose)” in the public [starter catalogue](https://fluxtion-playground.dev/starter-templates/index.json)): a runnable
+Maven project for a Mongoose-hosted app with the graph authored in plain Java, and CLAUDE.md / AGENTS.md for the
+assistant. No processor ships with it: **building it generates the processor on the hosted compiler and needs a
+compiler sign-in.** That sign-in is the expected next step, not a blocker. Offer it (rerun setup, or the starter
+README's Compiler sign-in step; both approve in the browser). If the person declines, stop and say the first build is
+waiting for compiler sign-in. Do not switch template, delete or replace the project, or use `-DskipFluxtion` to avoid it.
+Alternatives, when the person asks for them: the [audit-analyser bundle](https://fluxtion-playground.dev/start/scaffold?template=analyser-bundle)
+is for Analyser-assisted authoring in Spring XML; its shipped processor builds and runs without generation, and
+graph changes need compiler sign-in. The [AOT starter](https://fluxtion-playground.dev/start/scaffold?template=fluxtion-aot)
+is a smaller standalone example without project skills; its build also needs compiler sign-in. Check the selected
+template's actual contents and catalogue skill metadata; do not infer skills from its name. After scaffolding, tell the person to start
 Claude Code inside the new project directory so project skills are discovered. Preserve this plugin's
 connection; use setup and reconnect if the app is closed, not another user-scope registration.
 Read the downloaded PROJECT.md before authoring. There is no need to inspect JAR internals to find the catalogue.
-**Java for project builds.** Use the selected project's PROJECT.md and RUNBOOK.md for commands. The bundle uses `./run-server.sh`
-or `./run-and-export.sh`; the standalone AOT starter uses `./run.sh`. Builds and runs need JDK 21+
+**Java for project builds.** Use the selected project's PROJECT.md and runbooks for commands. The Java-authoring
+starter starts with `tools/context.sh` (see its CLAUDE.md). It and the bundle run with `./run-server.sh` or
+`./run-and-export.sh`; the standalone AOT starter uses `./run.sh`. Builds and runs need JDK 21+
 through `JAVA_HOME` or `java` on PATH. A Java downloaded by JBang need not be exposed through either, and macOS's
 `/usr/bin/java` is only a stub when no JDK is installed. Before the first build, run `java -version`. If it fails
 or reports below 21, run each build and run command with JBang's Java 21 for that command only:
@@ -273,7 +281,7 @@ or reports below 21, run each build and run command with JBang's Java 21 for tha
 
 The lookup also supports an existing JBang on PATH or in Homebrew; it does not assume setup installed
 JBang under your home. Use the same scoped Java environment for the documented setup, validate, generate and run commands.
-For the bundle, run `./run-and-export.sh`; for the standalone AOT starter, run `./run.sh`.
+For the Java-authoring starter or the bundle, run `./run-and-export.sh`; for the standalone AOT starter, run `./run.sh`.
 After editing a Spring graph, use its `./generate.sh` authoring path, not a direct Maven substitute.
 Do not edit shell profiles for this. Tell the person that builds outside the assistant need a JDK 21+ on PATH
 or this `JAVA_HOME`.
