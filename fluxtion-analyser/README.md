@@ -25,7 +25,7 @@ setup can download them. JBang installation may edit shell PATH, j! and JAVA_HOM
 The plugin supplies the MCP server. Setup does not add a user-scope registration. If one already exists,
 Claude offers to remove that exact entry with consent and a private backup, avoiding duplicate connections.
 The connection comes from the plugin; you do not need the Analyser's Set up AI for Claude Code. In Analyser
-1.42.0 that route can offer a user-scope entry again. If you add one, rerun plugin setup to review its removal.
+1.42.1 that route can offer a user-scope entry again. If you add one, rerun plugin setup to review its removal.
 
 ## Update the plugin and app
 
@@ -34,8 +34,8 @@ claude plugin marketplace update telamin
 claude plugin update fluxtion-analyser@telamin
 ```
 
-Then `/reload-plugins --force` or start a new session. Plugin 0.1.7 keeps a verified Analyser 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 or 1.41.2 connection
-working and offers a one-time upgrade notice. Say “set up the Fluxtion Analyser” when you want 1.42.0.
+Then `/reload-plugins --force` or start a new session. Plugin 0.1.8 keeps a verified Analyser 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6, 1.41.2 or 1.42.0 connection
+working and offers a one-time upgrade notice. Say “set up the Fluxtion Analyser” when you want 1.42.1.
 Approve the UPGRADE replacement, close the old app when asked, and rerun the plan. Setup downloads and verifies
 the new JAR before replacing the launcher, keeps a private backup, and preserves your settings and sign-in.
 Reconnect afterwards and ask Claude to confirm with its native `analyser_context` call.
@@ -57,9 +57,9 @@ Claude must call its own `analyser_context` tool and receive `ok: true` before r
 Installation or registration alone is not confirmation. Same-session reconnect worked in the macOS
 Claude Code 2.1.316 trial; `/reload-plugins` alone left the failed server disconnected.
 
-On a later day, the plugin server may fail because the Analyser is closed. If you kept 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 or 1.41.2, open
+On a later day, the plugin server may fail because the Analyser is closed. If you kept 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6, 1.41.2 or 1.42.0, open
 `JBANG_DIR/bin/analyser` (normally `~/.jbang/bin/analyser`) to stay on it, then reconnect. Setup proposes
-an upgrade for 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 or 1.41.2. For the current 1.42.0, say “set up the Fluxtion Analyser”
+an upgrade for 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6, 1.41.2 or 1.42.0. For the current 1.42.1, say “set up the Fluxtion Analyser”
 again and review the plan: it normally opens the existing app and may refresh the saved Java path for the
 bridge. Then reconnect and ask for the native check. Automatic MCP launch does not open the app or grant
 external access. A sign-in-only rerun keeps an already confirmed connection.
@@ -90,7 +90,7 @@ browser-approved sign-in and account usage. The helper does not upload project s
 provider and permissions govern what it reads and sends. Enabling external access lets local clients use
 the Analyser action API.
 
-Build credentials are stored owner-only at `~/.fluxtion/credentials` by default. Analyser 1.42.0 shares this sign-in with Maven. Private receipts and selective undo instructions
+Build credentials are stored owner-only at `~/.fluxtion/credentials` by default. Analyser 1.42.1 shares this sign-in with Maven. Private receipts and selective undo instructions
 are kept under `~/.fluxtion-analyser/`. Later code generation sends a graph model and generation configuration;
 the model can contain configured values, including private fields. Do not put secrets in it.
 
