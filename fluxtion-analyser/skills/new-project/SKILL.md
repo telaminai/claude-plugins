@@ -1,6 +1,6 @@
 ---
 name: new-project
-description: Build or create a new, blank or empty Fluxtion project, app, processor, event processor or event-processing application. Starts from the Java-authoring starter, the blank Java project (an empty graph in a Mongoose-hosted Maven project), never a project hand-written from Maven Central artifacts. Use for “build a Fluxtion app that…”, “create a Fluxtion processor”, “new Fluxtion project”, “blank Fluxtion project”, “empty Fluxtion project”.
+description: Build or create a new, blank or empty Fluxtion project, app, processor, event processor or event-processing application. Starts from the Java-authoring starter, the blank Java project (a Mongoose-hosted Maven project with a small example graph to replace), never a project hand-written from Maven Central artifacts. Use for “build a Fluxtion app that…”, “create a Fluxtion processor”, “new Fluxtion project”, “blank Fluxtion project”, “empty Fluxtion project”.
 ---
 
 # Start a new Fluxtion project
@@ -17,13 +17,15 @@ Do not hand-write a project from Maven Central artifacts, and do not build from 
   `com.fluxtion` 9.x is the retired earlier product. Only `fluxtion-maven-plugin` is on Central.
 - The recommended start is the Java-authoring starter, “Java authoring (Mongoose)” in the
   [starter catalogue](https://fluxtion-playground.dev/starter-templates/index.json): the blank Java project, a runnable
-  Maven project with an empty graph to author in plain Java and CLAUDE.md / AGENTS.md for the assistant. There is no
+  Maven project authored in plain Java, with a small example graph to replace and CLAUDE.md / AGENTS.md. There is no
   separate “blank” template: a request for a blank, empty or new Fluxtion project means this starter.
   Mongoose is the server it deploys to.
-- Its first build generates the processor on the hosted compiler and needs a one-time compiler sign-in that the person
-  approves in a browser. Without it the build stops with FLX-1022 before sending anything.
-- Every Fluxtion graph is generated at least once, so another template does not remove the sign-in, and
-  `-DskipFluxtion` skips generation, leaving the starter with no processor to run.
+- The example's processor ships with the starter, so the blank Java project builds and runs its small example without
+  sign-in. Changing the graph regenerates the processor on the hosted compiler, which needs a one-time compiler
+  sign-in that the person approves in a browser. Without it that build stops with FLX-1022 before sending anything,
+  and the FLX-1022 message shows the sign-in steps.
+- Every Fluxtion graph is generated at least once, so another template does not remove the sign-in for a changed
+  graph, and `-DskipFluxtion` skips generation, leaving no processor for a changed graph.
 
 ## Procedure
 
@@ -45,7 +47,8 @@ Do not hand-write a project from Maven Central artifacts, and do not build from 
    code it prints as soon as they appear, while approval is pending; the person approves in the browser. Never relay a
    token. After it succeeds, rebuild. Rerunning setup with sign-in (“set up the Fluxtion Analyser”) also works.
 
-If the person declines sign-in, the project is ready but unbuilt; say that the first build is waiting for it.
+If the person declines sign-in, the project still builds and runs its example; say that the first build after a graph
+change is waiting for compiler sign-in.
 
 Tell the person to start Claude Code inside the new project directory so its project skills are discovered. Other
 templates are alternatives only when the person asks for them; see the setup skill's post-setup notes.
