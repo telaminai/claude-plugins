@@ -6,7 +6,7 @@ when the host has no local shell (for example Claude Desktop), for other hosts, 
 
 ## App-UI route (from the earlier skill)
 
-This procedure uses Analyser **1.41.2**. A fetched skill provides instructions; it does not automatically
+This procedure uses Analyser **1.42.0**. A fetched skill provides instructions; it does not automatically
 install itself into an assistant or register an MCP server.
 
 ## Outcome and scope
@@ -35,12 +35,12 @@ the Analyser endpoint file/token. Use the native MCP tools and the app's support
 ## 2. Install using the supported JBang commands
 
 Pinned release:
-`https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/fluxtion-auditlog-analyser.jar`
+`https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.42.0/fluxtion-auditlog-analyser.jar`
 
 Expected JAR SHA-256:
-`76e68f46ea17146599e9340959073206e0f69264298073d5e9c1e8de5dc55a54`
+`f28cdfcb72050a94df6e3fc5f6b19248a7b9a44475d9278a7feae79abcee4936`
 
-[Published checksums](https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/SHA256SUMS.sha256)
+[Published checksums](https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.42.0/SHA256SUMS.sha256)
 are a consistency check, not an independent signature. Use the official release; stop on a mismatch. Do not substitute
 an unpublished build or `latest` with this pinned version.
 
@@ -70,7 +70,7 @@ children, have the person run the command in their own terminal instead; do not 
 When JBang is already installed and the Analyser launcher is absent:
 
 ```sh
-JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" jbang app install --java 21 --name analyser https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/fluxtion-auditlog-analyser.jar
+JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" jbang app install --java 21 --name analyser https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.42.0/fluxtion-auditlog-analyser.jar
 ```
 
 When JBang is absent, macOS/Linux with Bash:
@@ -81,19 +81,19 @@ When JBang is absent, macOS/Linux with Bash:
   analyser_bootstrap="$(mktemp)"
   trap 'rm -f "$analyser_bootstrap"' EXIT
   curl -fsSL https://sh.jbang.dev -o "$analyser_bootstrap"
-  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" bash "$analyser_bootstrap" app install --java 21 --name analyser https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/fluxtion-auditlog-analyser.jar
+  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" bash "$analyser_bootstrap" app install --java 21 --name analyser https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.42.0/fluxtion-auditlog-analyser.jar
 )
 ```
 
 Windows PowerShell uses the documented equivalent (requires a platform trial before release support is claimed):
 
 ```powershell
-iex "& { $(iwr -useb https://ps.jbang.dev) } app install --java 21 --name analyser https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/fluxtion-auditlog-analyser.jar"
+iex "& { $(iwr -useb https://ps.jbang.dev) } app install --java 21 --name analyser https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.42.0/fluxtion-auditlog-analyser.jar"
 ```
 
 The Bash block downloads completely before executing and preserves a failed fetch status.
 If a bootstrap command fails, stop and inspect the stage; do not continue to registration. Do not force-replace
-an arbitrary existing app. For an exact 1.40.2, 1.40.3, 1.40.4, 1.40.5 or 1.40.6 install, use the consented upgrade below.
+an arbitrary existing app. For an exact 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 or 1.41.2 install, use the consented upgrade below.
 
 ### Verify the downloaded JAR before opening the application
 
@@ -113,7 +113,7 @@ verification if it is missing. Paths containing spaces are supported.
     for candidate do
       digest=$(shasum -a 256 "$candidate") || exit 1
       digest=${digest%% *}
-      if [ "$digest" = 76e68f46ea17146599e9340959073206e0f69264298073d5e9c1e8de5dc55a54 ]; then
+      if [ "$digest" = f28cdfcb72050a94df6e3fc5f6b19248a7b9a44475d9278a7feae79abcee4936 ]; then
         printf "%s\n" "$candidate" >> "$marker"
       fi
     done
@@ -131,7 +131,7 @@ Windows remains pending its own platform trial.
 
 Open the installed absolute `analyser` launcher under the resolved JBang directory's `bin` folder. On macOS/Linux,
 supply both the resolved JBang executable directory and the app bin directory on this process's PATH, as below. Do not make additional shell
-startup edits. Keep application startup output in a private local file: 1.41.2 prints a token prefix, so do not
+startup edits. Keep application startup output in a private local file: 1.42.0 prints a token prefix, so do not
 paste raw startup output into prompts or reports. Leave the desktop application running.
 Do not pass `--rest` as an installation shortcut: it persists external access without the setup UI's confirmation.
 **If a bridge error recommends `--rest`, do not follow that hint for setup.** Open the app normally and use
@@ -145,11 +145,11 @@ Choose **Your own AI client connects**. **Do not choose “Claude inside Fluxtio
 task: that enables the embedded assistant and does not register this external host. **Both** also enables the
 embedded panel and is appropriate only if the person wants both routes. Let the person confirm external access
 in the app and check its status line reports access enabled; do not inspect the endpoint file to confirm it. For this version use **More options… → Generic MCP** to inspect the command, then register through
-the chosen host as below. **Do not use 1.41.2's one-click Claude/Codex registration for a JBang launcher:** it
+the chosen host as below. **Do not use 1.42.0's one-click Claude/Codex registration for a JBang launcher:** it
 omits the per-server PATH needed by GUI-launched hosts. The environment repair below is part of this skill's
 supported registration procedure; it does not enable external access or bypass that consent.
 
-Verify the displayed command against the intended installation. 1.41.2 checks `user.home/.jbang/bin`, ignoring
+Verify the displayed command against the intended installation. 1.42.0 checks `user.home/.jbang/bin`, ignoring
 custom `JBANG_DIR`, so it can show an older default launcher. Use the verified absolute launcher under the
 resolved install directory instead, with `--mcp`; never register a mismatched release or copy endpoint tokens.
 
@@ -235,8 +235,8 @@ tools; the Analyser reads the results and evidence.
 ## Upgrade an older installation
 
 Plugin 0.1.6 supports this upgrade flow. Updating the plugin and updating the Analyser are separate
-operations. The bridge accepts the exact, hash-verified 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 and 1.41.2 releases; it never downloads
-or upgrades them. A one-time native context notice (also written to stderr) offers the optional 1.41.2 upgrade. Unknown, modified or future
+operations. The bridge accepts the exact, hash-verified 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 and 1.42.0 releases; it never downloads
+or upgrades them. A one-time native context notice (also written to stderr) offers the optional 1.42.0 upgrade. Unknown, modified or future
 launchers are refused. A per-release minimum marker can require a newer app when tools need it.
 
 Say “set up the Fluxtion Analyser”, or run `/fluxtion-analyser:setup`. When UPGRADE is proposed, approve that
@@ -253,7 +253,7 @@ old launcher, its mode/fingerprint and selective undo. After setup, reconnect an
 
 ### Manual upgrade, including while using plugin 0.1.0
 
-Use this only after the person explicitly approves replacing their **exact 1.40.2, 1.40.3, 1.40.4, 1.40.5 or 1.40.6** launcher and closes that
+Use this only after the person explicitly approves replacing their **exact 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 or 1.41.2** launcher and closes that
 home's Analyser. Do not run another setup concurrently. Resolve the absolute JBang executable first and keep
 the same HOME, JBANG_DIR and JBANG_CACHE_DIR. JBang can edit shell startup files: preserve copies of any
 existing `.bashrc`, `.bash_profile`, `.zshrc`, `.zprofile`, `.profile` and `.config/fish/conf.d/jbang.fish`
@@ -267,11 +267,11 @@ Do not use this recipe for an unknown or customised launcher.
   analyser_upgrade_dir="${JBANG_DIR:-$HOME/.jbang}"
   analyser_upgrade_cache="${JBANG_CACHE_DIR:-$analyser_upgrade_dir/cache}"
   export JBANG_DIR="$analyser_upgrade_dir" JBANG_CACHE_DIR="$analyser_upgrade_cache"
-  analyser_new_url=https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/fluxtion-auditlog-analyser.jar
+  analyser_new_url=https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.42.0/fluxtion-auditlog-analyser.jar
   analyser_launcher="$analyser_upgrade_dir/bin/analyser"
   [ ! -L "$analyser_launcher" ] && [ -x "$analyser_launcher" ]
   analyser_old_version=
-  for analyser_candidate in 1.40.2 1.40.3 1.40.4 1.40.5 1.40.6; do
+  for analyser_candidate in 1.40.2 1.40.3 1.40.4 1.40.5 1.40.6 1.41.2; do
     analyser_candidate_url=https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v$analyser_candidate/fluxtion-auditlog-analyser.jar
     if printf '#!/bin/sh\nexec jbang run --java 21 %s "$@"\n' "$analyser_candidate_url" | cmp -s - "$analyser_launcher"; then
       analyser_old_version=$analyser_candidate
@@ -285,6 +285,7 @@ Do not use this recipe for an unknown or customised launcher.
     1.40.4) analyser_old_sha=3c502efc055b90027bc82f3eea943c2a7d8fb8d8be7d8bfcc3c0eb06cbae7d2e ;;
     1.40.5) analyser_old_sha=c447d17ddf5f4cab34b8394710590e5267a72da77d5aebebf269175c4d48a1fd ;;
     1.40.6) analyser_old_sha=7f77d46da7bf1c6c7e88967cbf254a05866499fd9ef898bad43cdc813b693f13 ;;
+    1.41.2) analyser_old_sha=76e68f46ea17146599e9340959073206e0f69264298073d5e9c1e8de5dc55a54 ;;
     *) echo 'Unknown or modified launcher: no upgrade applied' >&2; exit 2 ;;
   esac
   analyser_old_key="$(printf '%s' "$analyser_old_url" | shasum -a 256 | cut -d ' ' -f 1)"
@@ -294,20 +295,20 @@ Do not use this recipe for an unknown or customised launcher.
   printf '%s  %s\n' "$analyser_old_sha" "$analyser_old_jar" | shasum -a 256 -c -
   analyser_upgrade_backup="$(mktemp -d "$analyser_upgrade_dir/analyser-upgrade-$analyser_old_version.XXXXXX")"
   cp -p "$analyser_launcher" "$analyser_upgrade_backup/analyser"
-  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" trust add https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/
+  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" trust add https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.42.0/
   JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" info jar --fresh "$analyser_new_url"
-  printf '%s  %s\n' 76e68f46ea17146599e9340959073206e0f69264298073d5e9c1e8de5dc55a54 "$analyser_new_jar" | shasum -a 256 -c -
+  printf '%s  %s\n' f28cdfcb72050a94df6e3fc5f6b19248a7b9a44475d9278a7feae79abcee4936 "$analyser_new_jar" | shasum -a 256 -c -
   cmp -s "$analyser_upgrade_backup/analyser" "$analyser_launcher"
   JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" app install --force --java 21 --name analyser "$analyser_new_url"
   printf '#!/bin/sh\nexec jbang run --java 21 %s "$@"\n' "$analyser_new_url" | cmp -s - "$analyser_launcher"
-  printf '%s  %s\n' 76e68f46ea17146599e9340959073206e0f69264298073d5e9c1e8de5dc55a54 "$analyser_new_jar" | shasum -a 256 -c -
+  printf '%s  %s\n' f28cdfcb72050a94df6e3fc5f6b19248a7b9a44475d9278a7feae79abcee4936 "$analyser_new_jar" | shasum -a 256 -c -
   printf 'Previous launcher kept at %s/analyser\n' "$analyser_upgrade_backup"
 )
 ```
 
 Then rerun setup to open the verified new app, refresh its bridge Java path if needed, and reconnect as above.
 Keep the old JAR and trust rule. To undo, close the new app, check that nobody has edited the new launcher,
-and restore the saved launcher with its original mode. Use a plugin that allows the restored version (0.1.6 accepts all five previous versions);
+and restore the saved launcher with its original mode. Use a plugin that allows the restored version (0.1.7 accepts these six previous versions);
 do not overwrite later changes or delete settings, logs or credentials. A failed installer may leave partial
 state: inspect it and keep the backup rather than repeating `--force` blindly.
 
@@ -323,7 +324,7 @@ state: inspect it and keep the backup rather than repeating `--force` blindly.
 
   ```sh
   : "${analyser_jbang_executable:?Resolve the absolute JBang executable first}"
-  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" info jar --fresh https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/fluxtion-auditlog-analyser.jar
+  JBANG_DEFAULT_JAVA_VERSION="${JBANG_DEFAULT_JAVA_VERSION:-21}" "$analyser_jbang_executable" info jar --fresh https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.42.0/fluxtion-auditlog-analyser.jar
   ```
 
   This uses JBang's documented info command rather than starting the app or replacing its installed launcher.
@@ -333,7 +334,7 @@ state: inspect it and keep the backup rather than repeating `--force` blindly.
   is documentation/source-checked, but a real corrupt-cache recovery trial remains pending.
 - Retry the failed stage, preserving successful setup. Don't repeat installation after a host reload issue.
 - Cancel stops further setup; it does not roll back completed stages. If this wizard enabled external access before
-  cancellation, 1.41.2 leaves it on and offers **Turn it off**. Explain that state and let the person choose. Do not turn off
+  cancellation, 1.42.0 leaves it on and offers **Turn it off**. Explain that state and let the person choose. Do not turn off
   pre-existing access or undo pre-existing installations/registrations as an assumed cancellation cleanup.
 - A name conflict, managed policy or indeterminate CLI result needs a clear explanation, not an overwrite.
 - An unavailable GUI or missing local shell is a supported limitation; give instructions for the local machine.
@@ -447,8 +448,8 @@ manifest, or the helper's diagnostic bridge, with a native connection in the cur
 
 ### Reopen a compatible older release without upgrading
 
-If you kept Analyser 1.40.2, 1.40.3, 1.40.4, 1.40.5 or 1.40.6, setup proposes an upgrade to 1.41.2; it does not offer a reopen-only plan.
-To stay on 1.40.2, 1.40.3, 1.40.4, 1.40.5 or 1.40.6, open the existing launcher at the resolved `JBANG_DIR/bin/analyser` path
+If you kept Analyser 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 or 1.41.2, setup proposes an upgrade to 1.42.0; it does not offer a reopen-only plan.
+To stay on 1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 or 1.41.2, open the existing launcher at the resolved `JBANG_DIR/bin/analyser` path
 (default `~/.jbang/bin/analyser`), then run
 `/mcp reconnect plugin:fluxtion-analyser:fluxtion-analyser` and confirm with the native
 `analyser_context` tool. Declining an upgrade does not require accepting it on the next day.

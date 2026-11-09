@@ -20,14 +20,14 @@ import java.util.stream.Stream;
  * Supported automatic route: macOS/Claude Code. Other platforms remain acceptance work.
  */
 public class AnalyserSetup {
-    static final String VERSION = "1.41.2";
+    static final String VERSION = "1.42.0";
     static final String RELEASE_DIR =
             "https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v"
                     + VERSION
                     + "/";
     static final String JAR_URL = RELEASE_DIR + "fluxtion-auditlog-analyser.jar";
     static final String JAR_SHA256 =
-            "76e68f46ea17146599e9340959073206e0f69264298073d5e9c1e8de5dc55a54";
+            "f28cdfcb72050a94df6e3fc5f6b19248a7b9a44475d9278a7feae79abcee4936";
     record PinnedRelease(String version, String url, String sha256, String minimumRequired) {
         Path jar(Machine m) {
             return m.cacheDir.resolve("urls").resolve(hash(url))
@@ -51,7 +51,10 @@ public class AnalyserSetup {
             "c447d17ddf5f4cab34b8394710590e5267a72da77d5aebebf269175c4d48a1fd", "1.40.5"), new PinnedRelease(
             "1.40.6",
             "https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.40.6/fluxtion-auditlog-analyser.jar",
-            "7f77d46da7bf1c6c7e88967cbf254a05866499fd9ef898bad43cdc813b693f13", "1.40.6"));
+            "7f77d46da7bf1c6c7e88967cbf254a05866499fd9ef898bad43cdc813b693f13", "1.40.6"), new PinnedRelease(
+            "1.41.2",
+            "https://github.com/telaminai/fluxtionauditlog-analyser/releases/download/v1.41.2/fluxtion-auditlog-analyser.jar",
+            "76e68f46ea17146599e9340959073206e0f69264298073d5e9c1e8de5dc55a54", "1.41.2"));
     static final PinnedRelease TARGET_RELEASE = new PinnedRelease(VERSION, JAR_URL, JAR_SHA256, VERSION);
     // A previous release is compatible only when its version meets its reviewed minimum marker.
     // Raise that entry's marker to VERSION when this plugin requires newer MCP behaviour.
@@ -433,7 +436,7 @@ public class AnalyserSetup {
                 blocked.add("Unrecognised or modified analyser launcher at " + m.launcher
                         + " (SHA-256 " + fingerprint(m.launcher) + "). Expected the exact "
                         + VERSION + " launcher for " + JAR_URL
-                        + ", or an allow-listed previous release (1.40.2, 1.40.3, 1.40.4, 1.40.5 or 1.40.6) for an approved upgrade; it will not be changed.");
+                        + ", or an allow-listed previous release (1.40.2, 1.40.3, 1.40.4, 1.40.5, 1.40.6 or 1.41.2) for an approved upgrade; it will not be changed.");
             } else {
                 kept.add("Existing " + VERSION + " launcher is kept at " + m.launcher);
                 try {
@@ -447,7 +450,7 @@ public class AnalyserSetup {
             actions.add(
                     new Action(
                             Kind.INSTALL,
-                            "Install analyser 1.41.2 in "
+                            "Install analyser 1.42.0 in "
                                     + m.launcher.getParent()
                                     + "; verify its exact cached JAR. JBang may download Java 21"
                                     + " and update shell PATH, j! and JAVA_HOME. Private"
@@ -457,7 +460,7 @@ public class AnalyserSetup {
         if (previous != null && !i.state.equals("absent"))
             blocked.add("Close this home's Analyser " + previous.version
                     + " before the upgrade, then rerun setup. Setup will not stop it or start a competing window.");
-        // v1.41.2 derives its start-screen choice from this key at startup.
+        // v1.42.0 derives its start-screen choice from this key at startup.
         // Never overwrite an existing choice or race a running app's whole-file saves.
         String client = recordedClient(m);
         if (client != null) kept.add("Existing Analyser AI client choice is kept.");
@@ -476,7 +479,7 @@ public class AnalyserSetup {
             actions.add(
                     new Action(
                             Kind.START_APP,
-                            "Open the verified local 1.41.2 JAR for "
+                            "Open the verified local 1.42.0 JAR for "
                                     + m.home
                                     + " with persistent external MCP/REST access enabled. Local"
                                     + " clients can use its action API until access is turned"
@@ -1091,10 +1094,9 @@ public class AnalyserSetup {
             unchanged(m, ops, expected);
             if (statuses.containsKey(Status.SIGNED_IN.text))
                 System.out.println(
-                        "Signed in for builds. The Analyser's Compiler account view does not show"
-                                + " this sign-in yet.");
+                        "Signed in for builds. Analyser 1.42.0 shares this sign-in with Maven.");
             // the plugin owns the connection. The app's user-scope registration UI cannot
-            // detect it in 1.41.2 and can offer a duplicate; retain this note even on idle reruns.
+            // detect it in 1.42.0 and can offer a duplicate; retain this note even on idle reruns.
             if (pluginRoute(m)) {
                 receipt.put("pluginConnectionNote", PLUGIN_CONNECTION_NOTE);
                 System.out.println(PLUGIN_CONNECTION_NOTE);
@@ -1791,7 +1793,7 @@ public class AnalyserSetup {
         }
     }
 
-    // exact machine-tier contract in released Analyser v1.41.2, AiSetupState.Client.
+    // exact machine-tier contract in released Analyser v1.42.0, AiSetupState.Client.
     static final String CLIENT_KEY = "assistant.setup.client";
     static final String PLUGIN_CONNECTION_NOTE =
             "The connection comes from the plugin; you do not need the Analyser's Set up AI for "
